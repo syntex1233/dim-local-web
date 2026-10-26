@@ -1,0 +1,550 @@
+<!doctype html><html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="DIM Local"><meta name="theme-color" content="#0d0f13">
+<link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icon-180.png"><link rel="icon" href="icon-180.png">
+<title>DIM Local</title><style>
+:root{--bg:#0d0f13;--side:#12151a;--card:#181c23;--card2:#20252e;--line:#2c323d;--line2:#3a414e;--fg:#e9eaed;--mut:#959ba6;--acc:#e8b23a;--acc2:#f3c65c;--ok:#3fb950;--bad:#f85149;--ex:#ceae33;--leg:#7b52b5;--rare:#4f7fbd;--unc:#3f8a55;--pvp:#58a6ff;--r:10px}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:14px/1.45 "Segoe UI Variable Text","Segoe UI",system-ui,sans-serif;display:flex;height:100vh;overflow:hidden}
+::-webkit-scrollbar{width:10px;height:10px}::-webkit-scrollbar-thumb{background:#2a303a;border-radius:5px;border:2px solid var(--bg)}::-webkit-scrollbar-track{background:transparent}
+nav{width:220px;background:linear-gradient(180deg,#151920,#101317);border-right:1px solid var(--line);display:flex;flex-direction:column;padding:18px 12px;gap:3px;flex-shrink:0}
+nav .logo{font-weight:800;font-size:19px;padding:2px 10px 18px;letter-spacing:.5px}nav .logo span{color:var(--acc)}
+nav a{color:var(--mut);text-decoration:none;padding:9px 12px;border-radius:8px;display:flex;gap:11px;align-items:center;transition:background .12s,color .12s}
+nav a .ic{width:18px;text-align:center;font-size:15px;opacity:.85}
+nav a:hover{background:var(--card);color:var(--fg)}
+nav a.act{background:linear-gradient(90deg,#e8b23a24,#e8b23a08);color:var(--fg);box-shadow:inset 0 0 0 1px #e8b23a40}nav a.act .ic{color:var(--acc);opacity:1}
+#syncBtn{margin-top:auto}
+#status{font-size:12px;color:var(--mut);padding:10px 4px 0;line-height:1.6}
+main{flex:1;overflow:auto;padding:26px 34px 40px}
+section[data-tab]{display:none}section[data-tab].act{display:block;animation:fade .15s ease-out}
+@keyframes fade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+h1{font-size:26px;font-weight:700;margin:0 0 4px;letter-spacing:.2px}
+h2{font-size:13px;font-weight:700;margin:28px 0 12px;color:var(--acc);text-transform:uppercase;letter-spacing:1.2px}
+p.sub{margin:0 0 18px;color:var(--mut)}
+.card{background:linear-gradient(180deg,#1b2028,#171b21);border:1px solid var(--line);border-radius:var(--r);padding:16px;margin-bottom:12px;box-shadow:0 1px 0 #ffffff06 inset,0 6px 18px #0004}
+button{background:var(--card2);color:var(--fg);border:1px solid var(--line2);border-radius:8px;padding:7px 13px;cursor:pointer;font:inherit;transition:border-color .12s,background .12s,transform .06s}
+button:hover{border-color:var(--acc);background:#262c36}button:active{transform:translateY(1px)}
+button.pri{background:var(--acc);color:#1a1407;border-color:var(--acc);font-weight:650}button.pri:hover{background:var(--acc2)}
+button.on{background:var(--ok);color:#06200d;border-color:var(--ok)}button.sm{padding:4px 9px;font-size:12px;border-radius:6px}button:disabled{opacity:.45;cursor:default;transform:none}
+input,select,textarea{background:#0a0c10;color:var(--fg);border:1px solid var(--line2);border-radius:8px;padding:8px 10px;font:inherit}
+select{padding-right:6px}
+input:focus,select:focus,textarea:focus,button:focus-visible{outline:2px solid var(--acc);outline-offset:1px}
+label{display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--mut)}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}.mut{color:var(--mut)}.small{font-size:12px}.err{color:var(--bad)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:8px}
+.tile{display:flex;gap:11px;align-items:center;background:var(--card2);border:1px solid var(--line);border-radius:8px;padding:8px;transition:border-color .12s,background .12s}
+.tile img{width:46px;height:46px;border-radius:5px;flex-shrink:0;background:#000}
+.tile .t{flex:1;min-width:0}.tile b{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tile.click{cursor:pointer}.tile.click:hover{border-color:var(--acc);background:#262c36}.tile.exo img{outline:2px solid var(--ex)}
+.items{display:grid;grid-template-columns:repeat(auto-fill,minmax(68px,1fr));gap:7px}
+.it{position:relative;cursor:pointer;border-radius:6px;border:2px solid var(--line2);background:#000;aspect-ratio:1;transition:transform .1s,border-color .1s,box-shadow .1s}
+.it.t3{border-color:var(--unc)}.it.t4{border-color:var(--rare)}.it.t5{border-color:var(--leg)}.it.t6,.it.exo{border-color:var(--ex)}
+.it img{width:100%;height:100%;border-radius:4px;display:block}
+.it:hover,.it.sel{border-color:var(--acc);transform:translateY(-2px);box-shadow:0 6px 14px #0008;z-index:1}
+.it .pw{position:absolute;bottom:0;right:0;left:0;background:linear-gradient(0deg,#000d,#0000);font-size:11px;font-weight:600;text-align:right;padding:6px 4px 1px;font-variant-numeric:tabular-nums;border-radius:0 0 4px 4px}
+.it .bd{position:absolute;top:2px;left:2px;display:flex;gap:2px}
+.bdg{font-size:10px;font-weight:800;line-height:14px;padding:0 4px;border-radius:3px;background:var(--acc);color:#16130a;letter-spacing:.3px}
+.bdg.trash{background:#c43b35;color:#fff}.bdg.eq{background:var(--ok);color:#06200d}.bdg.lock{background:#0c0e12d0;color:var(--fg)}
+.grp{margin-top:18px}.grp:first-child{margin-top:4px}
+.grp h3{font-size:12px;font-weight:600;color:var(--mut);margin:0 0 8px;display:flex;gap:8px;align-items:center;text-transform:uppercase;letter-spacing:1px}
+.grp h3::after{content:"";flex:1;height:1px;background:var(--line)}
+.toolbar{position:sticky;top:-26px;z-index:3;background:linear-gradient(180deg,var(--bg) 85%,#0d0f1300);margin:0 -34px;padding:12px 34px 14px}
+.filters{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}.filters select{min-width:150px}
+.stats{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px}
+.stat{background:linear-gradient(180deg,#1b2028,#171b21);border:1px solid var(--line);border-radius:var(--r);padding:14px}
+.stat span{display:block;font-size:12px;color:var(--mut);text-transform:uppercase;letter-spacing:.8px}.stat b{font-size:24px;font-variant-numeric:tabular-nums;white-space:nowrap}
+.bar{height:6px;background:#0a0c10;border-radius:3px;margin-top:10px;overflow:hidden}.bar i{display:block;height:100%;background:linear-gradient(90deg,var(--acc),var(--acc2))}
+.warn b{color:var(--bad)}.warn .bar i{background:var(--bad)}
+.chars{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px}
+.char{position:relative;border-radius:var(--r);padding:16px;background:var(--card) left center/cover;min-height:104px;display:flex;flex-direction:column;justify-content:space-between;text-shadow:0 1px 3px #000;cursor:pointer;border:2px solid var(--line);transition:border-color .12s,transform .1s}
+.char:hover{border-color:var(--line2);transform:translateY(-1px)}.char.sel{border-color:var(--acc)}
+.char b{font-size:20px}
+.eqwrap{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:14px}
+.pv img{width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:8px;margin-top:12px;background:#000;display:block}.pv i{display:block;margin-top:8px;color:var(--mut);font-size:13px}
+.eq{display:grid;gap:5px;align-content:start}.eq .tile{padding:6px 9px}.eq .tile img{width:42px;height:42px}
+.dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:6px}
+table{width:100%;border-collapse:collapse}td,th{padding:8px 10px;border-bottom:1px solid var(--line);text-align:left}th{color:var(--mut);font-weight:500;font-size:12px}tr:hover td{background:#ffffff04}
+.perk{display:inline-flex;align-items:center;gap:5px;background:#0a0c10;border:1px solid var(--line2);border-radius:14px;padding:2px 9px 2px 3px;margin:2px;font-size:12px}
+.perk img{width:20px;height:20px;border-radius:50%}.perk.act{border-color:var(--acc);color:var(--acc2)}
+.cols{display:flex;gap:6px;flex-wrap:wrap}.col{display:flex;flex-direction:column;gap:2px;background:#0a0c10;border-radius:8px;padding:4px}
+.pbar{display:flex;align-items:center;gap:8px;margin:3px 0}.pbar .n{width:200px;display:flex;align-items:center;gap:6px;font-size:13px}.pbar .n img{width:22px;height:22px}
+.pbar .b{flex:1;height:8px;background:#0a0c10;border-radius:4px;overflow:hidden}.pbar .b i{display:block;height:100%;background:linear-gradient(90deg,var(--acc),var(--acc2))}
+.roll{border:1px solid var(--line);padding:9px 12px;margin:8px 0;background:var(--card2);border-radius:8px}
+.tag{display:inline-block;font-size:11px;font-weight:700;padding:1px 6px;border-radius:4px;margin-right:6px;background:var(--acc);color:#16130a}.tag.pvp{background:var(--pvp);color:#06121f}
+.tabs{display:inline-flex;gap:2px;flex-wrap:wrap;background:#0a0c10;border:1px solid var(--line);border-radius:9px;padding:3px}
+.tabs button{border-color:transparent;background:transparent}.tabs button:hover{background:var(--card2)}
+.tabs button.act{background:var(--acc);color:#16130a;border-color:var(--acc);font-weight:650}
+.tmgrid{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(340px,1fr);gap:22px;margin-top:16px;align-items:start}
+#tmPick{position:sticky;top:0;max-height:calc(100vh - 60px);display:flex;flex-direction:column}
+@media(max-width:1250px){.tmgrid{grid-template-columns:1fr}#tmPick{position:static;max-height:70vh}}
+.tmrow{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;align-items:stretch;padding:8px 0;border-bottom:1px solid var(--line)}
+.tmrow>.tile{min-width:0}.tmslots{display:contents}
+.tmslot{display:flex;align-items:center;gap:8px;min-width:0;padding:5px 8px;text-align:left}.tmslot img{width:38px;height:38px;border-radius:6px;background:#0a0c10}
+.tmslot span{display:flex;flex-direction:column;font-size:12px;line-height:1.25;overflow:hidden;min-width:0}
+.tmmode{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;align-items:center}
+.fsets{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:10px}
+.fset .look{display:flex;flex-wrap:wrap;gap:4px;margin:8px 0}.fset .look img{width:34px;height:34px;border-radius:5px;background:#0a0c10}.tmslot small{color:var(--mut);font-size:10px;text-transform:uppercase;letter-spacing:.8px}
+.tmslot.sel{border-color:var(--acc);background:#2a2618}.tmslot.none{border:1px dashed var(--line);border-radius:8px;justify-content:center;min-height:50px}
+.tmopts{display:grid;grid-template-columns:repeat(auto-fill,minmax(86px,1fr));gap:8px;margin-top:12px;overflow:auto;padding-right:4px}
+.tmopt{display:flex;flex-direction:column;align-items:center;gap:4px;padding:6px 4px;font-size:11px;line-height:1.2;background:transparent;border-color:transparent}
+.tmopt img{width:58px;height:58px;border-radius:6px;background:#0a0c10}.tmopt span{max-height:2.4em;overflow:hidden}
+.tmopt:hover{background:var(--card2);border-color:var(--line2)}.tmopt.cur{border-color:var(--acc);background:#2a2618}
+.modrow{display:grid;grid-template-columns:minmax(220px,300px) 1fr;gap:18px;align-items:center;padding:12px 0;border-bottom:1px solid var(--line)}.modrow:first-child{padding-top:0}.modrow:last-child{border-bottom:0;padding-bottom:0}
+@media(max-width:900px){.tmgrid{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(340px,1fr);gap:22px;margin-top:16px;align-items:start}
+#tmPick{position:sticky;top:0;max-height:calc(100vh - 60px);display:flex;flex-direction:column}
+@media(max-width:1250px){.tmgrid{grid-template-columns:1fr}#tmPick{position:static;max-height:70vh}}
+.tmrow{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;align-items:stretch;padding:8px 0;border-bottom:1px solid var(--line)}
+.tmrow>.tile{min-width:0}.tmslots{display:contents}
+.tmslot{display:flex;align-items:center;gap:8px;min-width:0;padding:5px 8px;text-align:left}.tmslot img{width:38px;height:38px;border-radius:6px;background:#0a0c10}
+.tmslot span{display:flex;flex-direction:column;font-size:12px;line-height:1.25;overflow:hidden;min-width:0}
+.tmmode{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;align-items:center}
+.fsets{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:10px}
+.fset .look{display:flex;flex-wrap:wrap;gap:4px;margin:8px 0}.fset .look img{width:34px;height:34px;border-radius:5px;background:#0a0c10}.tmslot small{color:var(--mut);font-size:10px;text-transform:uppercase;letter-spacing:.8px}
+.tmslot.sel{border-color:var(--acc);background:#2a2618}.tmslot.none{border:1px dashed var(--line);border-radius:8px;justify-content:center;min-height:50px}
+.tmopts{display:grid;grid-template-columns:repeat(auto-fill,minmax(86px,1fr));gap:8px;margin-top:12px;overflow:auto;padding-right:4px}
+.tmopt{display:flex;flex-direction:column;align-items:center;gap:4px;padding:6px 4px;font-size:11px;line-height:1.2;background:transparent;border-color:transparent}
+.tmopt img{width:58px;height:58px;border-radius:6px;background:#0a0c10}.tmopt span{max-height:2.4em;overflow:hidden}
+.tmopt:hover{background:var(--card2);border-color:var(--line2)}.tmopt.cur{border-color:var(--acc);background:#2a2618}
+.modrow{grid-template-columns:1fr}}
+.subgrid{display:flex;flex-wrap:wrap;gap:18px 34px;margin-top:16px}.subsec h4{margin:0 0 10px;font-size:11px;font-weight:700;color:var(--mut);text-transform:uppercase;letter-spacing:1px}
+.slots{display:flex;flex-wrap:wrap;gap:12px}
+.slot{width:92px;display:flex;flex-direction:column;align-items:center;gap:5px;text-align:center;font-size:12px;line-height:1.25;cursor:default}
+.slot img{width:54px;height:54px;border-radius:8px;background:#0a0c10;border:1px solid var(--line2);transition:transform .1s,border-color .1s}
+.slot.big img{width:72px;height:72px}.slot:hover img{border-color:var(--acc);transform:translateY(-2px)}
+.slot small{color:var(--mut);font-size:11px;margin-top:-3px}
+.slot.empty i{width:72px;height:72px;border:1px dashed var(--line2);border-radius:8px;display:block}
+.tiers{display:flex;gap:10px;overflow-x:auto;padding-bottom:4px}.tier{display:grid;gap:6px;align-content:start;padding:6px;background:#0a0c10;border-radius:8px}.tier.locked{opacity:.4}
+.tier img{width:44px;height:44px;border-radius:6px;border:2px solid transparent;opacity:.38;filter:grayscale(.7);display:block}.tier img.on{opacity:1;filter:none;border-color:var(--acc)}
+.mods{display:flex;flex-wrap:wrap;gap:4px;margin-top:8px}.mods img{width:28px;height:28px;border-radius:5px;background:#0a0c10;border:1px solid var(--line2)}
+#drawer{position:fixed;top:0;right:0;bottom:0;width:min(470px,100%);background:linear-gradient(180deg,#171b21,#121519);border-left:1px solid var(--line2);padding:20px;overflow:auto;transform:translateX(100%);transition:transform .18s ease-out;z-index:5;box-shadow:-20px 0 40px #0008}
+#drawer.open{transform:none}
+kbd{background:#0a0c10;border:1px solid var(--line2);border-bottom-width:2px;border-radius:4px;padding:1px 6px;font:12px Consolas,monospace}
+code{font:12px Consolas,monospace;background:#0a0c10;padding:1px 5px;border-radius:4px;color:#cfd3da}
+#toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:var(--card2);border:1px solid var(--line2);border-radius:10px;padding:11px 18px;display:none;z-index:9;max-width:80vw;box-shadow:0 10px 30px #000a}
+body{height:100dvh}
+@media(max-width:800px){
+ body{flex-direction:column}
+ nav{order:2;width:auto;flex-direction:row;padding:5px 4px calc(5px + env(safe-area-inset-bottom));gap:0;border-right:0;border-top:1px solid var(--line);overflow-x:auto;background:#12151a;flex-shrink:0}
+ nav{scrollbar-width:none}nav::-webkit-scrollbar{display:none}
+ nav a{flex:1 1 0;flex-direction:column;gap:2px;padding:6px 0;min-width:0;justify-content:center;text-align:center}
+ nav a .tx{display:none}nav a::after{content:attr(data-s);font-size:10px;white-space:nowrap}
+ nav a .ic{font-size:18px;width:auto}
+ nav .logo,#status{display:none}
+ #syncBtn{margin:0 2px;flex:0 0 auto;padding:6px 9px;font-size:0;align-self:center}#syncBtn::first-letter{font-size:18px}
+ main{order:1;padding:calc(14px + env(safe-area-inset-top)) 14px 28px}
+ .toolbar{position:static;margin:0;padding:0 0 8px;background:none}.help{display:none}
+ h1{font-size:22px}
+ .items{grid-template-columns:repeat(auto-fill,minmax(54px,1fr));gap:5px}
+ .chars{grid-template-columns:1fr}.char{min-height:84px}
+ .filters select{min-width:0;flex:1 1 140px}
+ #drawer{width:100%;padding:calc(16px + env(safe-area-inset-top)) 16px 28px}
+ .tmrow{grid-template-columns:1fr 1fr}.tmrow>.tile{grid-column:1/-1}
+ .slot{width:74px}.slot img{width:48px;height:48px}.slot.big img{width:60px;height:60px}
+ .modrow{grid-template-columns:1fr}
+ .eqwrap,.fsets{grid-template-columns:1fr}
+ table{font-size:12px}
+}
+</style></head><body>
+<nav>
+<div class="logo">DIM <span>Local</span></div>
+<a href="#home" data-s="Start"><span class="ic">◈</span><span class="tx">Übersicht</span></a><a href="#inv" data-s="Inventar"><span class="ic">▦</span><span class="tx">Inventar</span></a>
+<a href="#godroll" data-s="Godrolls"><span class="ic">★</span><span class="tx">Godroll-Finder</span></a><a href="#loadouts" data-s="Loadouts"><span class="ic">⚔</span><span class="tx">Loadouts</span></a><a href="#transmog" data-s="Transmog"><span class="ic">✦</span><span class="tx">Transmog</span></a>
+<a href="#search" data-s="Suchen"><span class="ic">⌕</span><span class="tx">Such-Shortcuts</span></a><a href="#settings" data-s="Setup"><span class="ic">⚙</span><span class="tx">Einstellungen</span></a>
+<button id="syncBtn" data-run='{"type":"sync"}' title="Inventar neu laden (F5)">⟳ Aktualisieren</button>
+<div id="status"></div>
+</nav>
+<main>
+
+<section data-tab="home">
+<h1>Übersicht</h1><p class="sub" id="conn"></p>
+<div id="setup"></div>
+<div class="chars" id="chars"></div>
+<h2 id="eqTitle">Aktuelle Ausrüstung</h2><div class="eqwrap" id="equip"></div>
+<h2 id="subTitle">Subklasse</h2><div id="subclass"></div>
+<h2 id="modTitle">Mods</h2><div id="mods"></div>
+<h2 id="artTitle">Artefakt</h2><div id="artifact"></div>
+<h2 id="pmTitle">Postmaster</h2><div id="pmList"></div>
+<h2>Ressourcen</h2><div class="stats" id="stats"></div>
+<h2>Schnellzugriff</h2>
+<div class="row"><button data-q="is:godroll is:weapon">Meine Godrolls</button><button data-q="is:godroll -is:locked">Ungesperrte Godrolls</button><button data-q="is:trash -is:locked">Trash-Rolls</button><button data-q="is:dupe is:weapon -is:godroll -is:locked">Dupes ohne Godroll</button></div>
+<div class="row" id="homeShortcuts" style="margin-top:8px"></div>
+</section>
+
+<section data-tab="inv">
+<div class="toolbar">
+<div class="row" style="justify-content:space-between"><h1 style="margin:0">Inventar</h1><span class="mut" id="hitCount"></span></div>
+<div class="row" style="margin-top:10px"><input id="q" placeholder="Suche: Name, perk:explosiv, is:godroll, -is:locked …" style="flex:1;min-width:260px" autocomplete="off"><button id="saveSc">Als Shortcut speichern</button></div>
+<div class="filters">
+<select id="fCat" aria-label="Kategorie"><option value="">Alle Kategorien</option><option value="is:weapon">Waffen</option><option value="is:armor">Rüstung</option><option value="-is:weapon -is:armor">Ghosts, Sparrows &amp; Co</option></select>
+<select id="fSlot" aria-label="Slot"><option value="">Alle Slots</option><optgroup label="Waffen"><option value="slot:kinetik">Kinetik</option><option value="slot:energie">Energie</option><option value="slot:power">Power</option></optgroup><optgroup label="Rüstung"><option value="slot:helm">Helm</option><option value="slot:arme">Arme</option><option value="slot:brust">Brust</option><option value="slot:beine">Beine</option><option value="slot:klasse">Klassengegenstand</option></optgroup><optgroup label="Sonstiges"><option value="slot:ghost">Ghost</option><option value="slot:sparrow">Sparrow</option><option value="slot:schiff">Schiff</option><option value="slot:emblem">Emblem</option></optgroup></select>
+<select id="fType" aria-label="Typ"><option value="">Alle Typen</option></select>
+<select id="fTier" aria-label="Seltenheit"><option value="">Alle Seltenheiten</option><option value="is:exotic">Exotisch</option><option value="is:legendary">Legendär</option><option value="is:rare">Selten</option></select>
+<select id="fClass" aria-label="Klasse"><option value="">Alle Klassen</option><option value="class:titan">Titan</option><option value="class:jäger">Jäger</option><option value="class:warlock">Warlock</option></select>
+<select id="fSort" aria-label="Sortierung"><option value="slot">Nach Slot gruppiert</option><option value="power">Power</option><option value="name">Name</option><option value="type">Typ</option></select>
+</div>
+<div class="row" style="justify-content:space-between;margin-top:10px"><div class="row"><div class="tabs" id="owners"></div><div class="tabs" id="gfilt"></div></div>
+<div class="row small"><span class="mut">Alle Treffer:</span><button class="sm" data-bulk="vault">in den Tresor</button><button class="sm" data-bulk="char">zum aktuellen Charakter</button><button class="sm" data-bulk="lock">sperren</button><button class="sm" data-bulk="unlock">entsperren</button></div></div>
+<p class="mut small help" style="margin:8px 0 0">Suche: <code>is:godroll</code> <code>is:pve</code> <code>is:pvp</code> <code>is:trash</code> <code>is:locked</code> <code>is:dupe</code> <code>is:vault</code> <code>is:crafted</code> <code>perk:…</code> <code>slot:helm</code> <code>type:automatikgewehr</code> – mit <code>-</code> davor verneint.</p>
+</div>
+<div id="items" style="margin-top:6px"></div>
+</section>
+
+<section data-tab="godroll">
+<h1>Godroll-Finder</h1>
+<p class="sub">Empfohlene Rolls aus der Wishlist (<span id="grStatus"></span>). Waffe suchen, um Perks, Empfehlungen und deine Exemplare zu sehen.</p>
+<div class="row"><input id="grQ" placeholder="Waffenname, z.B. Schicksalsbringer" size="34" autocomplete="off"><button data-upd>Daten aktualisieren</button></div>
+<div class="grid" id="grList" style="margin-top:12px"></div>
+<div id="grWeapon"></div>
+</section>
+
+<section data-tab="transmog">
+<h1>Transmog</h1><p class="sub">Shader und Ornamente der angelegten Ausrüstung ändern. Zur Auswahl stehen nur freigeschaltete.</p>
+<div class="tabs" id="tmChars"></div>
+<h2>Transmog-Sets</h2>
+<form id="fsSave" class="row"><input name="name" placeholder="Name für den aktuellen Look" style="flex:1;max-width:360px" required><button>Aktuellen Look speichern</button></form>
+<div class="fsets" id="fsList" style="margin-top:10px"></div>
+<h2>Angelegte Ausrüstung</h2>
+<div class="tmgrid"><div id="tmItems"></div><div id="tmPick" class="card"></div></div>
+</section>
+
+<section data-tab="loadouts">
+<h1>Loadouts</h1><p class="sub">Eigene Loadouts wie in DIM – selbst gespeichert oder per DIM-Link importiert – und darunter die Loadouts aus dem Spiel.</p>
+<div class="card" style="display:grid;gap:8px">
+<form id="loImport" class="row"><input name="link" placeholder="DIM-Link einfügen, z.B. https://dim.gg/abc1234/Mein-Build" style="flex:1;min-width:280px" autocomplete="off" required><button class="pri">Importieren</button></form>
+<form id="loSave" class="row"><select name="charId" id="loChar" aria-label="Charakter"></select><input name="name" placeholder="Name für das Loadout" style="flex:1;min-width:200px" required><button>Aktuelle Ausrüstung speichern</button></form>
+<span class="mut small">Übernommen werden Waffen, Rüstung, Subklasse mit Fähigkeiten, Aspekten und Fragmenten, Ghost, Sparrow, Schiff, Emblem sowie Rüstungs-Mods, Shader und Ornamente. Artefakt-Perks kann Bungie nicht setzen. Bei geteilten Loadouts nimmt die App dein bestes Exemplar desselben Items.</span></div>
+<h2>Meine Loadouts</h2><div id="myLo"></div>
+<h2>Spiel-Loadouts</h2>
+<div id="loList"></div>
+</section>
+
+<section data-tab="search">
+<h1>Such-Shortcuts</h1><p class="sub">Gespeicherte Suchen. Mit Aktion werden alle Treffer direkt verschoben oder gesperrt.</p>
+<form id="scForm" class="card row">
+<label>Name<input name="label" required size="16"></label>
+<label>Suche<input name="query" required size="34" placeholder="is:trash -is:locked"></label>
+<label>Aktion<select name="action"><option value="show">Nur anzeigen</option><option value="vault">In den Tresor</option><option value="char">Zum aktuellen Charakter</option><option value="lock">Sperren</option><option value="unlock">Entsperren</option></select></label>
+<button class="pri" style="align-self:flex-end">Speichern</button></form>
+<table><thead><tr><th>Name</th><th>Suche</th><th>Aktion</th><th></th></tr></thead><tbody id="scList"></tbody></table>
+</section>
+
+<section data-tab="settings">
+<h1>Einstellungen</h1>
+<h2>Bungie-Zugang</h2>
+<div class="card small" style="line-height:1.7;max-width:760px">
+DIM Local spricht direkt von diesem Gerät mit Bungie. Dafür brauchst du einmalig eine eigene (kostenlose) Bungie-App:
+<ol style="margin:6px 0;padding-left:20px">
+<li><a href="https://www.bungie.net/de/Application" target="_blank" style="color:var(--acc)">bungie.net/de/Application</a> öffnen → <b>Create New App</b>.</li>
+<li><b>OAuth Client Type:</b> <code>Confidential</code> · <b>Redirect URL:</b> <code class="here"></code> (genau diese Seite).</li>
+<li><b>Scope:</b> „Read your Destiny 2 information“ und „Move or equip Destiny gear“ anhaken. <b>Origin Header:</b> <code class="origin"></code></li>
+<li>Nach dem Speichern <b>API Key</b>, <b>OAuth client_id</b> und <b>OAuth client_secret</b> hier eintragen.</li>
+</ol></div>
+<form id="bgForm" class="card" style="display:grid;gap:10px;max-width:640px">
+<label>API Key<input name="apiKey" required autocomplete="off"></label>
+<label>OAuth client_id<input name="clientId" required autocomplete="off"></label>
+<label>OAuth client_secret<input name="clientSecret" type="password" autocomplete="off" placeholder="bleibt nur auf diesem Gerät"></label>
+<div class="row"><button class="pri">Speichern</button><button type="button" id="loginBtn">Bei Bungie anmelden</button><button type="button" id="logoutBtn">Abmelden</button><span class="mut small" id="bgMsg"></span></div>
+</form>
+<h2>Wishlist &amp; Anzeige</h2>
+<form id="setForm" class="card" style="display:grid;gap:12px;max-width:640px">
+<label>Wishlist-URLs (eine pro Zeile)<textarea name="wishlistUrls" rows="3" style="font:12px Consolas,monospace"></textarea></label>
+<label>Sprache für Item- und Perknamen<select name="lang"><option value="de">Deutsch</option><option value="en">English</option><option value="fr">Français</option><option value="es">Español</option><option value="it">Italiano</option></select></label>
+<div class="row"><label>Postmaster-Warnung ab<input name="postmasterWarn" type="number" min="1" max="50"></label>
+<span class="mut small">Tresorgröße und Währungs-Obergrenzen kommen automatisch aus Bungies Spieldaten.</span></div>
+<div><button class="pri">Speichern</button> <span class="mut small" id="setMsg"></span></div>
+</form>
+<h2>Weitere Godroll-Quellen</h2>
+<div class="card small" style="line-height:1.8">
+<a href="https://www.light.gg/god-roll/" target="_blank" style="color:var(--acc)">light.gg</a> – Community-Popularität und Roll Appraiser<br>
+<a href="https://d2foundry.gg" target="_blank" style="color:var(--acc)">d2foundry.gg</a> – Perk-Auswirkungen auf Werte<br>
+<a href="https://d2gunsmith.com" target="_blank" style="color:var(--acc)">d2gunsmith.com</a> – Waffen-Builder; mit der Erweiterung „DIM Wishlist Builder“ eigene Wishlists erzeugen<br>
+<a href="https://github.com/48klocs/dim-wish-list-sources" target="_blank" style="color:var(--acc)">dim-wish-list-sources</a> – voltron und weitere Listen (oben als URL eintragbar)<br>
+<a href="https://www.destiny2.science/" target="_blank" style="color:var(--acc)">destiny2.science</a> – Aegis' Endgame-Analyse und Data Compendium
+</div>
+</section>
+</main>
+<aside id="drawer"></aside>
+<div id="toast" role="status"></div>
+<script>
+const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
+// Web-Version: gleiche Pfade wie die Desktop-App, aber direkt an den App-Kern im Browser (Kopie, damit die UI nichts im Kern verändert)
+const coreP=new Promise(r=>window.__setCore=r);
+const call=async(m,u,b)=>{const url=new URL(u,location.href);return structuredClone(await (await coreP).handle(m,url.pathname,url.searchParams,b??{})??{});};
+const api=(u,b)=>call('POST',u,b).then(r=>{if(r?.error)throw new Error(r.error);return r;});
+const get=u=>call('GET',u);
+$$('.here').forEach(e=>e.textContent=location.origin+location.pathname);$$('.origin').forEach(e=>e.textContent=location.origin);
+const img=p=>p?(p.startsWith('/')?'https://www.bungie.net'+p:p):'';
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>'&#'+c.charCodeAt(0)+';');
+const fmt=n=>n==null?'–':Number(n).toLocaleString('de-DE');
+const uid=()=>crypto.randomUUID();
+let S={chars:[],myLoadouts:[],fashion:[],shortcuts:[],hotkeys:[],settings:{},loadouts:{},bungie:{},data:{}},toastT;
+function toast(msg,bad){const t=$('#toast');t.innerHTML=msg;t.style.color=bad?'var(--bad)':'';t.style.display='block';clearTimeout(toastT);toastT=setTimeout(()=>t.style.display='none',bad?7000:3000);}
+const act=(u,b,ok)=>api(u,b).then(r=>{if(r?.errors?.length)toast(`${r.ok} erledigt, ${r.errors.length} Fehler:<br>${r.errors.slice(0,4).map(esc).join('<br>')}`,true);else if(ok)toast(ok);tick();loadItems();loadEquip();return r;}).catch(e=>{toast(esc(e.message),true);tick();});
+const setDb=(key,value)=>api('/api/db',{key,value}).then(tick);
+const charName=id=>id==='vault'?'Tresor':(S.chars.find(c=>c.id===id)?.cls??'?');
+
+// ---- Navigation
+function show(){const t=(location.hash||'#home').slice(1);$$('section[data-tab]').forEach(s=>s.classList.toggle('act',s.dataset.tab===t));$$('nav a').forEach(a=>a.classList.toggle('act',a.hash==='#'+t));if(t==='inv')loadItems();if(t==='transmog')loadTm();}
+addEventListener('hashchange',show);
+addEventListener('keydown',e=>{if(e.key==='F5'){e.preventDefault();$('#syncBtn').click();}});
+
+// ---- Klicks
+const scLabel={show:'Nur anzeigen',vault:'In den Tresor',char:'Zum aktuellen Charakter',lock:'Sperren',unlock:'Entsperren'};
+function runShortcut(s){if(s.action==='show'){$('#q').value=s.query;location.hash='#inv';loadItems();}else act('/api/bulk',{query:s.query,action:s.action},`${s.label}: erledigt`);}
+document.addEventListener('click',e=>{const b=e.target.closest('button,[data-item]');if(!b)return;const d=b.dataset;
+ if(d.run)act('/api/run',JSON.parse(d.run),'Erledigt');
+ if(d.q){$('#q').value=d.q;location.hash='#inv';loadItems();}
+ if(d.sc){const s=S.shortcuts.find(x=>x.id===d.sc);s&&runShortcut(s);}
+ if(d.bulk){const q=$('#q').value.trim();if(!q)return toast('Erst eine Suche eingeben.',true);
+  if(confirm(`Alle ${lastItems.filter(i=>!i.equipped).length} Treffer für „${q}“: ${scLabel[d.bulk]}?`))act('/api/bulk',{query:fullQuery(),action:d.bulk},'Massenaktion fertig');}
+ if(d.pm)act('/api/postmaster',{charId:d.pm},'Postmaster geleert');
+ if(d.lo)act('/api/loadout',{charId:d.lo,index:+d.idx},'Loadout angelegt');
+ if(d.item)openItem(d.item);
+ if(d.mv)act('/api/move',{id:d.mv,target:d.to,equip:d.eq==='1'},'Erledigt').then(()=>openItem(d.mv));
+ if(d.lk)act('/api/lock',{id:d.lk,state:d.state==='1'}).then(()=>openItem(d.lk));
+ if(d.close!==undefined)$('#drawer').classList.remove('open');
+ if(d.upd!==undefined)api('/api/data/update').then(tick);
+ if(d.mlo)act('/api/myloadout/apply',{id:d.mlo,charId:d.to},'Loadout angelegt');
+ if(d.share){const {items,source,...l}=S.myLoadouts.find(x=>x.id===d.share);navigator.clipboard.writeText('https://app.destinyitemmanager.com/loadouts?loadout='+encodeURIComponent(JSON.stringify({...l,clearSpace:false}))).then(()=>toast('DIM-Link kopiert'));}
+ if(d.tmc){tmChar=d.tmc;tmPick=null;loadTm();}
+ if(d.tmp){const [id,idx]=d.tmp.split(':');tmPick={id,idx:+idx};renderTm();}
+ if(d.tmo)applyTm(+d.tmo);
+ if(d.tmm){tmMode=d.tmm;renderPick();}
+ if(d.fsa)act('/api/fashion/apply',{id:d.fsa,charId:d.to},'Transmog-Set angewendet').then(loadTm);
+ if(d.del){const [k,id]=d.del.split(':');if((k==='loadouts'||k==='fashion')&&!confirm('Wirklich löschen?'))return;
+  setDb(k,(k==='loadouts'?S.myLoadouts.map(({items,mods,...l})=>l):k==='fashion'?S.fashion.map(({look,...f})=>f):S[k]).filter(x=>x.id!==id));}});
+
+// ---- Inventar
+let owner='all',gf='',lastItems=[],itemTimer;
+const GF=[['','Alle'],['is:godroll','Godrolls'],['is:pve','PvE-Godrolls'],['is:pvp','PvP-Godrolls']];
+const FSEL=['#fCat','#fSlot','#fType','#fTier','#fClass'];
+const fullQuery=()=>[$('#q').value,owner==='all'?'':'owner:'+owner,gf,...FSEL.map(s=>$(s).value),'-slot:subklasse'].filter(Boolean).join(' ');
+FSEL.concat('#fSort').forEach(s=>$(s).onchange=loadItems);
+// Reihenfolge und Namen der Slot-Gruppen
+const BUCKETS=[[1498876634,'Kinetik'],[2465295065,'Energie'],[953998645,'Power'],[3448274439,'Helm'],[3551918588,'Arme'],[14239492,'Brust'],[20886954,'Beine'],[1585787867,'Klassengegenstand'],[3284755031,'Subklasse'],[4023194814,'Ghost'],[2025709351,'Sparrow'],[284967655,'Schiff'],[4274335291,'Emblem'],[215593132,'Postmaster']];
+const bIdx=i=>{const n=BUCKETS.findIndex(([b])=>b===(i.postmaster?215593132:i.bucket));return n<0?99:n;};
+let allItems=[];
+$('#gfilt').onclick=e=>{const b=e.target.closest('[data-gf]');if(b){gf=b.dataset.gf;loadItems();}};
+$('#q').oninput=()=>{clearTimeout(itemTimer);itemTimer=setTimeout(loadItems,150);};
+$('#owners').onclick=e=>{const b=e.target.closest('[data-owner]');if(b){owner=b.dataset.owner;loadItems();}};
+async function loadItems(){if(location.hash!=='#inv')return;
+ const [items,all]=await Promise.all([get('/api/items?limit=5000&q='+encodeURIComponent(fullQuery())),get('/api/items?limit=5000&q=')]);
+ lastItems=items;allItems=all;
+ // Typ-Liste passend zu Kategorie/Slot aus dem ganzen Inventar
+ const cur=$('#fType').value,types=[...new Set(all.filter(i=>($('#fCat').value!=='is:weapon'||i.itemType===3)&&($('#fCat').value!=='is:armor'||i.itemType===2)).map(i=>i.type).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'de'));
+ $('#fType').innerHTML='<option value="">Alle Typen</option>'+types.map(t=>{const v='type:'+t.toLowerCase().replace(/ /g,'_');return `<option value="${esc(v)}" ${v===cur?'selected':''}>${esc(t)}</option>`;}).join('');
+ $('#owners').innerHTML=[['all','Alle'],...S.chars.map(c=>[c.id,c.cls]),['vault','Tresor']].map(([id,l])=>`<button class="sm ${owner===id?'act':''}" data-owner="${id}">${esc(l)}</button>`).join('');
+ $('#gfilt').innerHTML=GF.map(([q,l])=>`<button class="sm ${gf===q?'act':''}" data-gf="${q}">${l}</button>`).join('');
+ $('#hitCount').textContent=`${items.length} Items`;
+ const srt=$('#fSort').value;
+ items.sort(srt==='name'?(a,b)=>a.name.localeCompare(b.name,'de'):srt==='type'?(a,b)=>a.type.localeCompare(b.type,'de')||b.power-a.power:srt==='power'?(a,b)=>b.power-a.power:(a,b)=>bIdx(a)-bIdx(b)||b.power-a.power);
+ const cell=i=>`<div class="it t${i.tier}" data-item="${esc(i.id)}" title="${esc(i.name)} · ${esc(i.type)} · ${esc(charName(i.owner))}${i.god.length?' · Godroll: '+esc(i.god.join(', ')):''}">
+  <img src="${esc(img(i.icon))}" alt="${esc(i.name)}" loading="lazy"><div class="bd">${i.god.length?'<span class="bdg">GOD</span>':''}${i.trash?'<span class="bdg trash">TRASH</span>':''}${i.equipped?'<span class="bdg eq">E</span>':''}${i.locked?'<span class="bdg lock">🔒</span>':''}</div>
+  ${i.power?`<span class="pw">${i.power}</span>`:''}</div>`;
+ if(!items.length){$('#items').innerHTML='<span class="mut">Keine Treffer.</span>';return;}
+ if(srt!=='slot'){$('#items').innerHTML=`<div class="items">${items.map(cell).join('')}</div>`;return;}
+ const groups=[];for(const i of items){const n=bIdx(i),g=groups.at(-1);if(g?.n===n)g.l.push(i);else groups.push({n,l:[i]});}
+ $('#items').innerHTML=groups.map(g=>`<div class="grp"><h3>${esc(BUCKETS[g.n]?.[1]??g.l[0].type)} <span>${g.l.length}</span></h3><div class="items">${g.l.map(cell).join('')}</div></div>`).join('');}
+// Angelegte Waffen + Rüstung je Charakter, in Slot-Reihenfolge (Kinetik, Energie, Power, Helm, Arme, Brust, Beine, Klasse)
+const SLOTS=[1498876634,2465295065,953998645,3448274439,3551918588,14239492,20886954,1585787867];
+let eqItems=[],eqChar=null;
+$('#chars').onclick=e=>{const c=e.target.closest('[data-eqc]');if(c&&!e.target.closest('button')){eqChar=c.dataset.eqc;render();}};
+let pmItems=[];
+async function loadEquip(){[eqItems,pmItems]=await Promise.all([get('/api/items?limit=200&q=is:equipped'),get('/api/items?limit=500&q=is:postmaster')]);render();}
+function equipHtml(){const ch=S.chars.find(c=>c.id===eqChar)??S.chars[0];if(!ch)return '';eqChar=ch.id;
+ const mine=eqItems.filter(i=>i.owner===ch.id).sort((a,b)=>bIdx(a)-bIdx(b));
+ const tile=i=>`<div class="tile click ${i.tier===6?'exo':''}" data-item="${esc(i.id)}"><img src="${esc(img(i.icon))}" alt=""><div class="t"><b>${esc(i.name)}</b><span class="mut small">${esc(i.type)}${i.power&&i.itemType!==16?' · '+i.power:''}</span></div>${i.god.length?'<span class="bdg">GOD</span>':''}${i.trash?'<span class="bdg trash">TRASH</span>':''}</div>`;
+ const col=(t,l)=>`<div class="eq"><div class="mut small">${t}</div>${l.map(tile).join('')||'<span class="mut">–</span>'}</div>`;
+ return col('Waffen',mine.filter(i=>i.itemType===3))+col('Rüstung',mine.filter(i=>i.itemType===2))+col('Subklasse &amp; Co',mine.filter(i=>i.itemType!==2&&i.itemType!==3));}
+$('#saveSc').onclick=()=>{const q=$('#q').value.trim();if(!q)return;const label=prompt('Name für den Shortcut:',q);if(label)setDb('shortcuts',[...S.shortcuts,{id:uid(),label,query:q,action:'show'}]).then(()=>toast('Gespeichert'));};
+
+const perkCols=i=>`<div class="cols">${i.perks.map(col=>`<div class="col">${col.map(p=>`<span class="perk ${p.active?'act':''}" title="${esc(p.name)}">${p.icon?`<img src="${esc(img(p.icon))}" alt="">`:''}${esc(p.name)}</span>`).join('')}</div>`).join('')}</div>`;
+// Subklasse wie im Spiel: Super, Fähigkeiten, Aspekte, Fragmente als Icons; Beschreibung im Tooltip (einzeln nachgeladen)
+const descs={};
+function needDescs(ps){const miss=ps.filter(p=>p.hash&&!(p.hash in descs));miss.forEach(p=>descs[p.hash]='');
+ return Promise.all(miss.map(p=>get('/api/preview?hash='+p.hash).then(d=>{descs[p.hash]=d.desc||'';}).catch(()=>{})));}
+const KIND=[['Super',/Super/],['Aspekte',/Aspekt/],['Fragmente',/Fragment/],['Fähigkeiten',/Klassenf|Bewegung|Nahkampf|Granate/]];
+const ABIL=['Klassenf','Bewegung','Nahkampf','Granate'];
+const slot=(p,cls='',sub='')=>`<div class="slot ${cls}" title="${esc(p.name)}${descs[p.hash]?'\n\n'+esc(descs[p.hash]):''}"><img src="${esc(img(p.icon))}" alt=""><span>${esc(p.name)}</span>${sub?`<small>${esc(sub)}</small>`:''}</div>`;
+// Rüstung: je Teil eine Zeile mit den eingesetzten Mods als Icons
+const modSlots=i=>`<div class="slots">${i.mods.map(p=>slot(p,'',p.type.replace(/^Allgemeiner Rüstungsmod$/,'Allgemein').replace(/-?(Rüstungs)?mod$/i,'').replace(/^Universelles /,''))).join('')||'<span class="mut small">Keine Mods.</span>'}</div>`;
+const modRow=i=>`<div class="modrow"><div class="tile click ${i.tier===6?'exo':''}" data-item="${esc(i.id)}"><img src="${esc(img(i.icon))}" alt=""><div class="t"><b>${esc(i.name)}</b><span class="mut small">${esc(i.type)}</span></div></div>${modSlots(i)}</div>`;
+function subclassHtml(i){const ps=i.setup.filter(p=>!/^(leer|empty)/i.test(p.name)),by=k=>ps.filter(p=>KIND.find(([,r])=>r.test(p.type))?.[0]===k);
+ const abil=by('Fähigkeiten').sort((a,b)=>ABIL.findIndex(x=>a.type.includes(x))-ABIL.findIndex(x=>b.type.includes(x)));
+ const sec=(t,l)=>l.length?`<div class="subsec"><h4>${t}</h4><div class="slots">${l.join('')}</div></div>`:'';
+ return `<div class="card sub"><div class="row" style="gap:14px"><img src="${esc(img(i.icon))}" width="60" height="60" alt="" style="border-radius:50%"><div><b style="font-size:19px">${esc(i.name)}</b><div class="mut small">${esc(i.type)}</div></div></div>
+  <div class="subgrid">${sec('Super',by('Super').map(p=>slot(p,'big')))}${sec('Fähigkeiten',abil.map(p=>slot(p,'',p.type.split('|')[0].replace(/^\S+-/,'').trim())))}${sec('Aspekte',by('Aspekte').map(p=>slot(p,'big')))}${sec('Fragmente',by('Fragmente').map(p=>slot(p)))}</div></div>`;}
+async function openItem(id){const i=(await get('/api/items?limit=5000&q=')).find(x=>x.id===id);if(!i)return;
+ if(i.setup)await needDescs(i.setup);if(i.mods)await needDescs(i.mods);
+ $$('.it.sel').forEach(e=>e.classList.remove('sel'));$(`.it[data-item="${CSS.escape(id)}"]`)?.classList.add('sel');
+ const moves=S.chars.map(c=>`<div class="row" style="justify-content:space-between"><span>${esc(c.cls)} <span class="mut small">${c.light}</span></span><span class="row">
+  <button class="sm" data-mv="${esc(id)}" data-to="${c.id}" ${i.owner===c.id&&!i.postmaster?'disabled':''}>Hierhin</button>
+  ${i.itemType>=2&&i.itemType<=3?`<button class="sm pri" data-mv="${esc(id)}" data-to="${c.id}" data-eq="1" ${i.equipped&&i.owner===c.id?'disabled':''}>Anlegen</button>`:''}</span></div>`).join('');
+ $('#drawer').innerHTML=`<div class="row" style="gap:12px"><img src="${esc(img(i.icon))}" width="64" height="64" alt="" style="border-radius:6px"><div style="flex:1"><h1 style="font-size:19px">${esc(i.name)}</h1>
+  <span class="mut">${esc(i.type)}${i.power&&i.itemType!==16?' · '+i.power:''} · ${esc(charName(i.owner))}${i.postmaster?' (Postmaster)':''}${i.equipped?' · angelegt':''}</span></div><button class="sm" data-close aria-label="Schließen">✕</button></div>
+  <div class="pv" id="pv" data-id="${esc(id)}"></div>
+  ${i.god.length?`<div class="card" style="margin-top:12px;border-color:var(--acc)"><b style="color:var(--acc)">Godroll</b><div class="small">${i.god.map(esc).join('<br>')}</div></div>`:''}
+  ${i.trash?`<div class="card" style="margin-top:12px;border-color:var(--bad)"><b class="err">Trash-Roll laut Wishlist</b></div>`:''}
+  ${i.perks.length?`<h2>Perks</h2>${perkCols(i)}`:''}
+  ${i.mods?`<h2>Mods</h2>${modSlots(i)}`:''}
+  ${i.setup?subclassHtml(i):`<h2>Verschieben</h2><div class="card" style="display:grid;gap:8px">${moves}
+  <div class="row" style="justify-content:space-between"><span>Tresor</span><button class="sm" data-mv="${esc(id)}" data-to="vault" ${i.owner==='vault'?'disabled':''}>In den Tresor</button></div></div>`}
+  ${i.lockable?`<button data-lk="${esc(id)}" data-state="${i.locked?0:1}">${i.locked?'Entsperren':'Sperren'}</button>`:''}
+  <button data-q="${esc(i.name)}">Alle „${esc(i.name)}“ zeigen</button>`;
+ $('#drawer').classList.add('open');
+ get('/api/preview?hash='+i.hash).then(p=>{const pv=$(`#pv[data-id="${CSS.escape(id)}"]`);if(pv&&p.screenshot)pv.innerHTML=`<img src="${esc(img(p.screenshot))}" alt="Vorschau ${esc(i.name)}">${p.flavor?`<i>${esc(p.flavor)}</i>`:''}`;}).catch(()=>{});}
+
+// ---- Godroll-Finder
+let grTimer,grCurrent=null;
+$('#grQ').oninput=e=>{clearTimeout(grTimer);grTimer=setTimeout(()=>grSearch(e.target.value),200);};
+async function grSearch(q){const r=await get('/api/godroll/search?q='+encodeURIComponent(q));$('#grWeapon').innerHTML='';
+ $('#grList').innerHTML=r.map(w=>`<div class="tile click ${w.tier===6?'exo':''}" data-w="${esc(w.name)}"><img src="${esc(img(w.icon))}" alt=""><div class="t"><b>${esc(w.name)}</b><span class="mut small">${esc(w.type)} · ${w.rolls} Rolls</span></div></div>`).join('')
+  ||(q?'<span class="mut">Keine Waffe mit Wishlist-Einträgen gefunden.</span>':'');}
+$('#grList').onclick=e=>{const t=e.target.closest('[data-w]');t&&grOpen(t.dataset.w);};
+const kind=r=>(r.title+' '+(r.note.match(/tags:\S+/)?.[0]??'')).toLowerCase();
+async function grOpen(name){const w=await get('/api/godroll/weapon?name='+encodeURIComponent(name));if(!w)return;
+ grCurrent=w;$('#grList').innerHTML='';const max=w.perks[0]?.count||1,filt=$('#grWeapon').dataset.f||'alle';
+ const rolls=w.rolls.filter(r=>filt==='alle'||kind(r).includes(filt));
+ $('#grWeapon').innerHTML=`<div class="card" style="margin-top:12px"><div class="row" style="gap:14px"><img src="${esc(img(w.icon))}" width="64" height="64" alt="" style="border-radius:6px">
+  <div style="flex:1"><h1>${esc(w.name)}</h1><span class="mut">${esc(w.type)} · ${w.total} empfohlene Kombinationen · du besitzt ${w.owned.length}</span></div><button id="grBack">Zurück</button></div></div>
+  ${w.owned.length?`<div class="card"><h2 style="margin-top:0">Deine Exemplare</h2>${w.owned.map(i=>`<div class="roll"><div class="row" style="justify-content:space-between"><span>${i.god.length?'<span class="tag">GODROLL</span>':i.trash?'<span class="tag pvp" style="background:#c43b35;color:#fff">TRASH</span>':''}<b>${i.power}</b> <span class="mut small">${esc(charName(i.owner))}${i.locked?' · gesperrt':''}</span></span><button class="sm" data-item="${esc(i.id)}">Details</button></div>${i.god.length?`<div class="small" style="color:var(--acc)">${i.god.map(esc).join(' · ')}</div>`:''}${perkCols(i)}</div>`).join('')}</div>`:''}
+  <div class="row" style="gap:16px;align-items:flex-start">
+  <div class="card" style="flex:1;min-width:300px"><h2 style="margin-top:0">Beliebteste Perks</h2>${w.perks.map(p=>`<div class="pbar"><div class="n">${p.icon?`<img src="${esc(img(p.icon))}" alt="">`:''}${esc(p.name)}</div><div class="b"><i style="width:${p.count/max*100}%"></i></div><span class="mut small">${p.count}</span></div>`).join('')}</div>
+  <div class="card" style="flex:1.3;min-width:320px"><div class="row"><h2 style="margin:0;flex:1">Empfohlene Rolls</h2>${['alle','pve','pvp'].map(f=>`<button class="sm ${f===filt?'on':''}" data-gf="${f}">${f.toUpperCase()}</button>`).join('')}</div>
+  ${rolls.map(r=>`<div class="roll">${kind(r).includes('pvp')?'<span class="tag pvp">PvP</span>':kind(r).includes('pve')?'<span class="tag">PvE</span>':''}<b>${esc(r.title||'Wishlist-Roll')}</b> <span class="mut small">${r.combos} Kombis</span>
+   ${r.cols?`<div class="small" style="margin:4px 0">${esc(r.cols)}</div>`:`<div>${r.perks.map(p=>`<span class="perk">${p.icon?`<img src="${esc(img(p.icon))}" alt="">`:''}${esc(p.name)}</span>`).join('')}</div>`}
+   ${r.note?`<div class="mut small">${esc(r.note)}</div>`:''}</div>`).join('')||'<span class="mut">Keine Rolls für diesen Filter.</span>'}</div></div>`;
+ $('#grBack').onclick=()=>{$('#grWeapon').innerHTML='';grSearch($('#grQ').value);};}
+$('#grWeapon').addEventListener('click',e=>{const b=e.target.closest('[data-gf]');if(b){$('#grWeapon').dataset.f=b.dataset.gf;grOpen(grCurrent.name);}});
+
+// ---- Transmog: links die angelegten Teile, rechts Auswahl mit Suche
+let TM={items:[],names:{}},tmChar=null,tmPick=null;
+const nm=h=>TM.names[h]??['?',''];
+const KLABEL={shader:'Shader',ornament:'Ornament'};
+async function loadTm(){if(location.hash!=='#transmog')return;tmChar=S.chars.some(c=>c.id===tmChar)?tmChar:S.chars[0]?.id;
+ $('#tmChars').innerHTML=S.chars.map(c=>`<button class="sm ${c.id===tmChar?'act':''}" data-tmc="${c.id}">${esc(c.cls)}</button>`).join('');
+ if(!tmChar){$('#tmItems').innerHTML='<span class="mut">Erst anmelden.</span>';return;}
+ if(!TM.items.length)$('#tmItems').innerHTML='<span class="mut">Lade freigeschaltete Shader und Ornamente …</span>';
+ try{TM=await get('/api/transmog?charId='+tmChar);}catch(e){$('#tmItems').innerHTML=`<span class="err">${esc(e.message)}</span>`;return;}
+ renderTm();}
+function renderTm(){
+ $('#tmItems').innerHTML=TM.items.map(i=>`<div class="tmrow"><div class="tile ${i.tier===6?'exo':''}"><img src="${esc(img(i.icon))}" alt=""><div class="t"><b>${esc(i.name)}</b><span class="mut small">${esc(i.type)}</span></div></div>
+  <div class="tmslots">${['ornament','shader'].map(k=>{const s=i.sockets.find(x=>x.kind===k);
+   if(!s)return `<div class="tmslot none"><span class="mut small">kein ${KLABEL[k]}</span></div>`;
+   const [n,ic]=nm(s.current),sel=tmPick?.id===i.id&&tmPick.idx===s.idx;
+   return `<button class="tmslot ${sel?'sel':''}" data-tmp="${esc(i.id)}:${s.idx}"><img src="${esc(img(ic))}" alt=""><span><small>${KLABEL[k]}</small>${esc(n)}</span></button>`;}).join('')}</div></div>`).join('')||'<span class="mut">Keine Ausrüstung geladen.</span>';
+ renderPick();}
+let tmMode='one';
+// Ornament-Sets: gleiche Set-Teile heißen ähnlich („Digitaler Teufel“-Maske / -Griffe) → längste gemeinsame Zeichenfolge
+function lcs(a,b){a=a.toLowerCase();b=b.toLowerCase();let best=0;const prev=new Array(b.length+1).fill(0);
+ for(let i=1;i<=a.length;i++){let d=0;for(let j=1;j<=b.length;j++){const t=prev[j];prev[j]=a[i-1]===b[j-1]?d+1:0;if(prev[j]>best)best=prev[j];d=t;}}return best;}
+const setMatch=(name,opts)=>{let best=null,score=7;for(const h of opts){const n=lcs(name,nm(h)[0]);if(n>score){score=n;best=h;}}return best;};
+function pickSocket(){const it=TM.items.find(i=>i.id===tmPick?.id);return [it,it?.sockets.find(x=>x.idx===tmPick.idx)];}
+function renderPick(){const [it,s]=pickSocket();
+ if(!s){$('#tmPick').innerHTML='<span class="mut">Links einen Shader oder ein Ornament anklicken.</span>';return;}
+ $('#tmPick').innerHTML=`<div class="row" style="justify-content:space-between"><b>${KLABEL[s.kind]} für ${esc(it.name)}</b><span class="mut small">${s.options.length} freigeschaltet</span></div>
+  <input id="tmQ" placeholder="${KLABEL[s.kind]} suchen …" autocomplete="off" style="width:100%;margin-top:10px">
+  <div class="tmmode"><span class="mut small">Anwenden auf:</span><div class="tabs" id="tmMode">${(s.kind==='shader'?[['one','Nur dieses Teil'],['armor','Alle Rüstungsteile'],['all','Alles inkl. Waffen']]:[['one','Nur dieses Teil'],['set','Passendes Set auf alle Rüstungsteile']]).map(([k,l])=>`<button class="sm ${tmMode===k?'act':''}" data-tmm="${k}">${l}</button>`).join('')}</div>
+  <button class="sm" data-tmo="${s.current}" title="Den aktuell eingesetzten ${KLABEL[s.kind]} mit dem gewählten Modus übertragen">⟳ Sync: aktuelles übertragen</button></div>
+  <div class="tmopts" id="tmOpts"></div>`;
+ $('#tmQ').oninput=drawOpts;drawOpts();$('#tmQ').focus();}
+function drawOpts(){const [,s]=pickSocket(),q=$('#tmQ').value.trim().toLowerCase();
+ const list=s.options.filter(h=>nm(h)[0].toLowerCase().includes(q)).sort((a,b)=>nm(a)[0].localeCompare(nm(b)[0],'de'));
+ $('#tmOpts').innerHTML=list.map(h=>`<button class="tmopt ${h===s.current?'cur':''}" data-tmo="${h}" title="${esc(nm(h)[0])}"><img src="${esc(img(nm(h)[1]))}" alt="" loading="lazy"><span>${esc(nm(h)[0])}</span></button>`).join('')||'<span class="mut">Nichts gefunden.</span>';}
+async function applyTm(hash){const [it,s]=pickSocket();if(!s)return;
+ const mode=tmMode==='set'&&s.kind!=='ornament'||(tmMode!=='one'&&tmMode!=='set'&&s.kind!=='shader')?'one':tmMode;
+ if(mode==='one')return act('/api/transmog/apply',{hash,targets:[{id:it.id,idx:s.idx}]},`${nm(hash)[0]} angewendet`).then(loadTm);
+ if(mode!=='set'){const targets=TM.items.filter(i=>mode==='all'||i.itemType===2).flatMap(i=>i.sockets.filter(x=>x.kind==='shader').map(x=>({id:i.id,idx:x.idx})));
+  return act('/api/transmog/apply',{hash,targets},`${nm(hash)[0]} auf ${targets.length} Teile angewendet`).then(loadTm);}
+ // Ornament-Set: für jedes Rüstungsteil das passende freigeschaltete Ornament suchen
+ const plan=TM.items.filter(i=>i.itemType===2).map(i=>{const x=i.sockets.find(y=>y.kind==='ornament');return {i,x,h:x&&(i.id===it.id?hash:setMatch(nm(hash)[0],x.options))};});
+ const found=plan.filter(p=>p.h),miss=plan.filter(p=>!p.h);
+ if(!confirm(`Ornament-Set „${nm(hash)[0]}“ übertragen:\n\n${found.map(p=>`✓ ${p.i.type}: ${nm(p.h)[0]}`).join('\n')}${miss.length?'\n\nNicht freigeschaltet / kein passendes Teil:\n'+miss.map(p=>`– ${p.i.type}`).join('\n'):''}`))return;
+ const groups=new Map();for(const p of found)groups.set(p.h,[...(groups.get(p.h)??[]),{id:p.i.id,idx:p.x.idx}]);
+ for(const [h,targets] of groups)await api('/api/transmog/apply',{hash:h,targets}).catch(e=>toast(esc(e.message),true));
+ toast(`Ornament-Set auf ${found.length} Teile übertragen`);loadTm();tick();}
+
+// Transmog-Sets
+$('#fsSave').onsubmit=e=>{e.preventDefault();act('/api/fashion/save',{charId:tmChar,name:e.target.name.value},'Look gespeichert').then(r=>r&&e.target.reset());};
+function fashionHtml(s){return s.fashion.map(f=>`<div class="card fset" style="margin:0"><div class="row" style="justify-content:space-between"><b>${esc(f.name)}</b><span class="mut small">${CLS[f.classType]??''}</span></div>
+ <div class="look">${f.look.map(x=>`<img src="${esc(img(x.icon))}" alt="${esc(x.name)}" title="${esc(x.name)}">`).join('')}</div>
+ <div class="row">${s.chars.filter(c=>c.classType===f.classType).map(c=>`<button class="sm pri" data-fsa="${esc(f.id)}" data-to="${c.id}">Auf ${esc(c.cls)} anwenden</button>`).join('')}<button class="sm" data-del="fashion:${esc(f.id)}" aria-label="Löschen">✕</button></div></div>`).join('')||'<span class="mut">Noch keine Sets. Stell links einen Look zusammen und speichere ihn.</span>';}
+
+// ---- Eigene Loadouts
+const CLS=['Titan','Jäger','Warlock'];
+$('#loImport').onsubmit=e=>{e.preventDefault();act('/api/myloadout/import',{link:e.target.link.value},'Loadout importiert').then(r=>r&&e.target.reset());};
+$('#loSave').onsubmit=e=>{e.preventDefault();act('/api/myloadout/save',Object.fromEntries(new FormData(e.target)),'Loadout gespeichert').then(r=>r&&e.target.reset());};
+function myLoHtml(s){return s.myLoadouts.map(l=>{const gear=l.items.filter(x=>x.gear),skip=l.items.length-gear.length,sub=l.equipped.some(x=>x.socketOverrides);
+ return `<div class="card"><div class="row" style="justify-content:space-between"><div><b>${esc(l.name)}</b> <span class="mut small">${CLS[l.classType]??'Alle Klassen'}${l.source?' · aus DIM':''}</span></div>
+ <div class="row">${s.chars.filter(c=>l.classType===3||l.classType===c.classType).map(c=>`<button class="sm pri" data-mlo="${esc(l.id)}" data-to="${c.id}">Auf ${esc(c.cls)} anlegen</button>`).join('')}
+ <button class="sm" data-share="${esc(l.id)}">DIM-Link kopieren</button><button class="sm" data-del="loadouts:${esc(l.id)}" aria-label="Löschen">✕</button></div></div>
+ <div class="items" style="margin-top:8px;grid-template-columns:repeat(auto-fill,52px)">${gear.map(x=>`<div class="it" style="cursor:default${x.owned?'':';opacity:.35'}" title="${esc(x.name)}${x.equip?'':' (nur mitnehmen)'}${x.owned?'':' – nicht im Inventar'}"><img src="${esc(img(x.icon))}" alt="${esc(x.name)}">${x.equip?'':'<div class="bd"><span class="bdg lock">+</span></div>'}</div>`).join('')}</div>
+ ${l.notes?`<div class="mut small" style="margin-top:6px">${esc(l.notes)}</div>`:''}${l.mods.length?`<div class="mods" title="Mods, Shader und Ornamente">${l.mods.map(m=>`<img src="${esc(img(m.icon))}" alt="${esc(m.name)}" title="${esc(m.name)}">`).join('')}</div>`:''}
+ <div class="mut small" style="margin-top:6px">${[sub&&'mit Subklassen-Setup',l.mods.length&&l.mods.length+' Mods/Shader',skip&&skip+' Einträge, die nicht anlegbar sind'].filter(Boolean).join(' · ')}</div></div>`;}).join('')||'<span class="mut">Noch keine eigenen Loadouts.</span>';}
+
+// ---- Shortcuts
+$('#scForm').onsubmit=e=>{e.preventDefault();setDb('shortcuts',[...S.shortcuts,{id:uid(),...Object.fromEntries(new FormData(e.target))}]);e.target.reset();};
+
+// ---- Einstellungen
+let formsLoaded=false;
+$('#bgForm').onsubmit=e=>{e.preventDefault();api('/api/bungie',Object.fromEntries(new FormData(e.target))).then(()=>{$('#bgMsg').textContent='Gespeichert.';e.target.clientSecret.value='';tick();});};
+$('#loginBtn').onclick=()=>api('/api/login').then(r=>{location.href=r.redirect;}).catch(e=>toast(esc(e.message),true));
+$('#logoutBtn').onclick=()=>api('/api/logout').then(tick);
+$('#setForm').onsubmit=e=>{e.preventDefault();const f=Object.fromEntries(new FormData(e.target));f.postmasterWarn=+f.postmasterWarn;
+ const reload=f.lang!==S.settings.lang||f.wishlistUrls!==S.settings.wishlistUrls;
+ setDb('settings',f).then(()=>{$('#setMsg').textContent='Gespeichert.'+(reload?' Spieldaten werden neu geladen …':'');if(reload)api('/api/data/update');});};
+
+// ---- Darstellung
+let lastSig='';
+function render(){const s=S;
+ const c=!s.configured?['acc','Bungie-Zugang fehlt']:!s.loggedIn?['acc','Nicht angemeldet']:s.error?['bad','Fehler: '+s.error]:s.synced?['ok','Angemeldet'+(s.user?' als '+s.user:'')]:['acc','Lade Inventar …'];
+ $('#status').innerHTML=`<span class="dot" style="background:var(--${c[0]})"></span>${esc(c[1])}<br>${s.busy?esc(s.busy)+'<br>':''}${s.synced?'Stand '+new Date(s.synced).toLocaleTimeString('de-DE')+'<br>':''}${s.data.state==='bereit'?s.data.weapons+' Waffen in der Wishlist':'Spieldaten: '+s.data.state}`;
+ $('#conn').textContent=c[1];
+ $('#setup').innerHTML=!s.configured?`<div class="card">Einmalige Einrichtung: unter <a href="#settings" style="color:var(--acc)">Einstellungen</a> eine Bungie-App eintragen, dann anmelden.</div>`
+  :!s.loggedIn?`<div class="card row"><span style="flex:1">Melde dich bei Bungie an, damit DIM Local dein Inventar laden kann.</span><button class="pri" onclick="$('#loginBtn').click()">Bei Bungie anmelden</button></div>`:'';
+ const eh=equipHtml();if($('#equip').dataset.h!==eh){$('#equip').dataset.h=eh;$('#equip').innerHTML=eh;}
+ const pm=pmItems.filter(i=>i.owner===eqChar),ph=`<div class="items" style="max-width:820px">${pm.map(i=>`<div class="it ${i.tier===6?'exo':''}" data-item="${esc(i.id??'')}" title="${esc(i.name)} · ${esc(i.type)}"><img src="${esc(img(i.icon))}" alt="${esc(i.name)}" loading="lazy">${i.amount>1?`<span class="pw">${i.amount}</span>`:i.power?`<span class="pw">${i.power}</span>`:''}</div>`).join('')||'<span class="mut">Leer.</span>'}</div>${pm.length?`<button class="sm" data-pm="${eqChar}" style="margin-top:8px">Alles abholen</button>`:''}`;
+ if($('#pmList').dataset.h!==ph){$('#pmList').dataset.h=ph;$('#pmList').innerHTML=ph;}
+ const ch=S.chars.find(c=>c.id===eqChar),a=ch?.artifact,sc=eqItems.find(i=>i.owner===eqChar&&i.itemType===16);
+ if(sc?.setup&&sc.setup.some(p=>!(p.hash in descs)))needDescs(sc.setup).then(render);
+ const sh=sc?.setup?subclassHtml(sc):'<span class="mut">Keine Subklasse geladen.</span>';
+ if($('#subclass').dataset.h!==sh){$('#subclass').dataset.h=sh;$('#subclass').innerHTML=sh;}
+ $('#subTitle').textContent='Subklasse'+(ch?' – '+ch.cls:'');
+ const arm=eqItems.filter(i=>i.owner===eqChar&&i.itemType===2).sort((a,b)=>bIdx(a)-bIdx(b)),allMods=arm.flatMap(i=>i.mods??[]);
+ if(allMods.some(p=>!(p.hash in descs)))needDescs(allMods).then(render);
+ const mh=arm.length?`<div class="card">${arm.map(modRow).join('')}</div>`:'<span class="mut">Keine Rüstung geladen.</span>';
+ if($('#mods').dataset.h!==mh){$('#mods').dataset.h=mh;$('#mods').innerHTML=mh;}
+ $('#modTitle').textContent='Mods'+(ch?' – '+ch.cls:'');
+ const ah=a?`<div class="card art"><div class="row" style="gap:12px;margin-bottom:12px"><img src="${esc(img(a.icon))}" width="48" height="48" alt="" style="border-radius:6px"><div><b style="font-size:16px">${esc(a.name)}</b><div class="mut small">${[a.power&&'+'+a.power+' Power',a.slots.length&&a.slots.filter(s=>!s.empty).length+' von '+a.slots.length+' Plätzen belegt',a.points&&a.used+' von '+a.points+' Punkten verteilt'].filter(Boolean).join(' · ')}</div></div></div>
+  ${a.slots.length?`<div class="slots">${a.slots.map(s=>s.empty?'<div class="slot empty" title="Leerer Platz"><i></i><span class="mut">leer</span></div>':slot(s,'big')).join('')}</div>`:`<div class="tiers">${a.tiers.map(t=>`<div class="tier ${t.unlocked?'':'locked'}">${t.perks.map(p=>`<img class="${p.active?'on':''}" src="${esc(img(p.icon))}" alt="${esc(p.name)}" title="${esc(p.name)}${p.active?' (aktiv)':''}">`).join('')}</div>`).join('')}</div>`}</div>`:'<span class="mut">Kein Artefakt geladen.</span>';
+ if($('#artifact').dataset.h!==ah){$('#artifact').dataset.h=ah;$('#artifact').innerHTML=ah;}
+ $('#artTitle').textContent='Artefakt'+(ch?' – '+ch.cls:'');
+ $('#pmTitle').textContent=`Postmaster${eqChar?' – '+charName(eqChar):''} (${pm.length}/${S.limits?.postmaster??21})`;
+ $('#eqTitle').textContent='Aktuelle Ausrüstung'+(eqChar?' – '+charName(eqChar):'');
+ $('#syncBtn').disabled=!s.loggedIn||!!s.busy;
+ $('#chars').innerHTML=s.chars.map(ch=>`<div class="char ${ch.id===eqChar?'sel':''}" data-eqc="${ch.id}" title="Ausrüstung anzeigen" style="background-image:url('${esc(img(ch.bg))}')"><div><b>${esc(ch.cls)}</b> <span>✦ ${ch.light}</span></div>
+  <div class="row" style="justify-content:space-between"><span class="${ch.postmaster>=s.settings.postmasterWarn?'err':''}">Postmaster ${ch.postmaster}/${s.limits?.postmaster??21}</span>${ch.postmaster?`<button class="sm" data-pm="${ch.id}">Holen</button>`:''}</div></div>`).join('');
+ const stat=(k,val,max,warn)=>`<div class="stat ${warn?'warn':''}"><span>${k}</span><b>${fmt(val)}${max?'<span style="display:inline;font-size:13px"> / '+fmt(max)+'</span>':''}</b>${max&&val!=null?`<div class="bar"><i style="width:${Math.min(100,val/max*100)}%"></i></div>`:''}</div>`;
+ $('#stats').innerHTML=s.counts?stat('Tresor',s.vaultCount,s.limits.vault||null,s.limits.vault&&s.vaultCount>=s.limits.vault-10)+s.currencies.map(c=>stat(c.name,c.amount,c.max&&c.max<999999?c.max:null,c.max&&c.amount>=c.max)).join('')
+  +stat('Godrolls im Besitz',s.counts.god)+stat('Trash-Rolls',s.counts.trash):'<span class="mut">Noch keine Daten.</span>';
+ $('#grStatus').innerHTML=(s.data.state==='bereit'?`${s.data.weapons} Waffen, Stand ${new Date(s.data.updated).toLocaleString('de-DE')}`:s.data.state==='lädt'?'lädt Wishlist und Manifest …':'noch nicht geladen')+(s.data.error?` <span class="err">Fehler: ${esc(s.data.error)}</span>`:'');
+ $('#loList').innerHTML=s.chars.map(ch=>`<h2>${esc(ch.cls)} <span class="mut small">✦ ${ch.light}</span></h2><div class="grid">${(s.loadouts[ch.id]||[]).filter(l=>!l.empty).map(l=>
+  `<div class="tile"><img src="${esc(img(l.icon))}" alt="" style="background:url('${esc(img(l.color))}') center/cover"><div class="t"><b>${esc(l.name)}</b><div class="row" style="margin-top:5px"><button class="sm pri" data-lo="${ch.id}" data-idx="${l.index}">Anlegen</button></div></div></div>`).join('')||'<span class="mut">Keine Loadouts gespeichert.</span>'}</div>`).join('')||'<span class="mut">Erst anmelden.</span>';
+ $('#loginBtn').disabled=!s.configured;$('#logoutBtn').disabled=!s.loggedIn;
+ const sig=JSON.stringify([s.shortcuts,s.hotkeys,s.hotkeyErrors,s.myLoadouts,s.chars,s.fashion]);
+ if(sig!==lastSig){lastSig=sig;
+  $('#fsList').innerHTML=fashionHtml(s);
+  $('#myLo').innerHTML=myLoHtml(s);
+  $('#loChar').innerHTML=s.chars.map(c=>`<option value="${c.id}">${esc(c.cls)}</option>`).join('');
+  $('#scList').innerHTML=s.shortcuts.map(x=>`<tr><td>${esc(x.label)}</td><td><code>${esc(x.query)}</code></td><td>${scLabel[x.action]}</td><td><button class="sm" data-sc="${esc(x.id)}">Ausführen</button> <button class="sm" data-del="shortcuts:${esc(x.id)}" aria-label="Löschen">✕</button></td></tr>`).join('')||'<tr><td colspan="4" class="mut">Noch keine Shortcuts.</td></tr>';
+  $('#homeShortcuts').innerHTML=s.shortcuts.map(x=>`<button data-sc="${esc(x.id)}">${esc(x.label)}</button>`).join('');
+}
+ if(!formsLoaded){formsLoaded=true;for(const [k,v] of Object.entries(s.settings)){const el=$('#setForm [name='+k+']');if(el)el.value=v;}
+  $('#bgForm').apiKey.value=s.bungie.apiKey;$('#bgForm').clientId.value=s.bungie.clientId;if(s.bungie.hasSecret)$('#bgForm').clientSecret.placeholder='gespeichert – nur zum Ändern ausfüllen';}}
+let lastSync=null;
+async function tick(){try{S=await get('/api/state');render();if(S.synced!==lastSync){lastSync=S.synced;loadItems();loadEquip();loadTm();}}
+ catch{$('#status').innerHTML='<span class="dot" style="background:var(--bad)"></span>App-Server nicht erreichbar';}}
+show();tick();setInterval(tick,2000);
+</script>
+<script type="module" src="app.mjs"></script>
+</body></html>

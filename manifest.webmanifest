@@ -1,0 +1,15 @@
+{
+  "name": "DIM Local",
+  "short_name": "DIM Local",
+  "description": "Destiny-2-Inventar, Godroll-Finder, Loadouts und Transmog",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#0d0f13",
+  "theme_color": "#0d0f13",
+  "lang": "de",
+  "icons": [
+    { "src": "icon-180.png", "sizes": "180x180", "type": "image/png" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}
