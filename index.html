@@ -63,8 +63,11 @@ label{display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--mut)
 .bdg.tg{background:#3b4252;color:#fff}.dupe{display:grid;grid-template-columns:44px 1fr auto;gap:10px;align-items:center;padding:8px 0;border-top:1px solid var(--line)}.dupe:first-child{border-top:0}
 #dropBar{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);display:none;gap:8px;z-index:8;background:var(--side);border:1px solid var(--line2);border-radius:12px;padding:10px;box-shadow:0 10px 30px #000a}
 #dropBar.on{display:flex}#dropBar div{padding:16px 20px;border:1px dashed var(--line2);border-radius:8px;min-width:90px;text-align:center}#dropBar div.over,.char.over{border-color:var(--acc);background:#2a2618;outline:2px solid var(--acc)}
-.opt{display:flex;align-items:center;gap:6px;font-size:13px}.opt img{width:20px;height:20px}.opt input{width:72px}
+.opt{display:flex;align-items:center;gap:6px;font-size:13px}.opt img{width:20px;height:20px}
+#opTargets{display:grid!important;gap:6px}.opr{display:grid;grid-template-columns:150px 1fr 1fr 70px;gap:12px;align-items:center}.opr label{display:flex;align-items:center;gap:6px}.opr input{flex:1;accent-color:var(--acc);padding:0}.opr output{text-align:right;font-weight:600}
+@media(max-width:700px){.opr{grid-template-columns:1fr 1fr}.opr output{text-align:left}}
 .lsts{display:flex;flex-wrap:wrap;gap:4px 14px;margin-top:8px;font-size:13px}.lsts span{display:flex;align-items:center;gap:4px}.lsts img{width:18px;height:18px}.lsts small{font-size:11px}
+.noic{width:36px;height:36px;border-radius:6px;background:var(--line);display:block}
 .wk{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:10px}.obj{display:grid;grid-template-columns:1fr 90px;gap:8px;align-items:center;font-size:12px;margin-top:8px}.obj .bar{margin-top:4px}
 .carry{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:10px}.carry .items{grid-template-columns:repeat(3,1fr);max-width:240px}
 .eqwrap{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:14px}
@@ -150,6 +153,10 @@ code{font:12px Consolas,monospace;background:#0a0c10;padding:1px 5px;border-radi
 body{height:100dvh}
 @media(max-width:800px){
  body{flex-direction:column}
+ /* iOS: fest an den Bildschirmrand, damit die Leiste ganz unten sitzt; 16px verhindert das Reinzoomen bei Eingabefeldern */
+ body{position:fixed;inset:0;height:auto}
+ input,select,textarea{font-size:16px}
+ #q{min-width:0!important;width:100%}
  nav{order:2;width:auto;flex-direction:row;padding:5px 4px calc(5px + env(safe-area-inset-bottom));gap:0;border-right:0;border-top:1px solid var(--line);overflow-x:auto;background:#12151a;flex-shrink:0}
  nav{scrollbar-width:none}nav::-webkit-scrollbar{display:none}
  nav a{flex:1 0 auto;flex-direction:column;gap:2px;padding:6px 4px;min-width:58px;justify-content:center;text-align:center}
@@ -195,7 +202,7 @@ body{height:100dvh}
 <div id="setup"></div><div id="xAlerts"></div><div id="vaultWarn"></div>
 <div class="chars" id="chars"></div><div id="farmBox" style="margin-top:10px"></div>
 <div id="cstats"></div><h2 id="eqTitle">Aktuelle Ausrüstung</h2><div class="eqwrap" id="equip"></div>
-<h2 id="carryTitle">Dabei</h2><div class="carry" id="carry"></div>
+<div class="row" style="justify-content:space-between"><h2 id="carryTitle">Dabei</h2><button class="sm" id="emptyInv" title="Alle nicht angelegten Waffen und Rüstungen dieses Charakters in den Tresor">Inventar leeren</button></div><div class="carry" id="carry"></div>
 <h2 id="subTitle">Subklasse</h2><div id="subclass"></div>
 <h2 id="modTitle">Mods</h2><div id="mods"></div>
 <h2 id="artTitle">Artefakt</h2><div id="artifact"></div>
@@ -703,18 +710,34 @@ document.addEventListener('click',async e=>{const b=e.target.closest('button');i
  if(d.ops!==undefined||d.opa!==undefined){const r=opRes[+(d.ops??d.opa)],ct=+$('#opChar').value,name=prompt('Name für das Loadout:','Optimierer '+r.stats.map(s=>s.value).join('/'));if(!name)return;
   const lo=await api('/api/optimize/save',{ids:r.items.map(i=>i.id),classType:ct,name});tick();
   if(d.opa!==undefined){const c=S.chars.find(c=>c.classType===ct);if(c)act('/api/myloadout/apply',{id:lo.id,charId:c.id},'Loadout angelegt');}else toast('Loadout gespeichert – unter „Loadouts“');}});
+// Inventar leeren: nicht angelegte Waffen und Rüstung des gewählten Charakters in den Tresor (Ghost, Sparrow & Co. bleiben)
+$('#emptyInv').onclick=async()=>{const n=carryItems.filter(i=>i.owner===eqChar&&(i.itemType===2||i.itemType===3)).length;
+ if(!n)return toast('Keine Waffen oder Rüstung im Inventar.');
+ if(!confirm(`${n} Waffen und Rüstungsteile von ${charName(eqChar)} in den Tresor legen? Angelegtes bleibt.`))return;
+ const w=await api('/api/bulk',{query:`owner:${eqChar} is:weapon -is:postmaster`,action:'vault'}).catch(e=>({errors:[e.message],ok:0}));
+ act('/api/bulk',{query:`owner:${eqChar} is:armor -is:postmaster`,action:'vault'}).then(a=>{const err=[...(w.errors??[]),...(a?.errors??[])];
+  err.length?toast(`${(w.ok??0)+(a?.ok??0)} verschoben, ${err.length} Fehler:<br>${err.slice(0,4).map(esc).join('<br>')}`,true):toast('Inventar geleert');});};
+// Bilder, die Bungie nicht liefert, ausblenden statt als kaputtes Symbol zeigen
+document.addEventListener('error',e=>{if(e.target.tagName==='IMG')e.target.style.visibility='hidden';},true);
 // Seiten: Optimierer, Woche, Fortschritt
 function showX(){const t=location.hash.slice(1);if(t==='optimizer')loadOp();if(t==='weekly')loadWk();if(t==='progress')loadPr();}
 addEventListener('hashchange',showX);setTimeout(showX,800);
 let opStats=null,opRes=[];
 async function loadOp(){if(!S.chars.length)return;
  if(!opStats?.length){const a=await get('/api/items?limit=1&q=is:armor');opStats=a[0]?.stats??[];
-  $('#opTargets').innerHTML=opStats.map(s=>`<label class="opt" title="Mindestwert ${esc(s.name)}">${s.icon?`<img src="${esc(img(s.icon))}" alt="">`:''}${esc(s.name)}<input type="number" min="0" max="250" step="5" data-st="${s.hash}" placeholder="0"></label>`).join('')||'<span class="mut">Noch keine Rüstung mit Werten geladen.</span>';}
+  $('#opTargets').innerHTML=opStats.map(s=>`<div class="opr"><span class="opt">${s.icon?`<img src="${esc(img(s.icon))}" alt="">`:''}${esc(s.name)}</span>
+   <label class="mut small">von<input type="range" min="0" max="200" step="5" value="0" data-mn="${s.hash}" aria-label="${esc(s.name)} mindestens"></label>
+   <label class="mut small">bis<input type="range" min="0" max="200" step="5" value="200" data-mx="${s.hash}" aria-label="${esc(s.name)} höchstens"></label>
+   <output data-out="${s.hash}">egal</output></div>`).join('')||'<span class="mut">Noch keine Rüstung mit Werten geladen.</span>';}
  const cur=$('#opChar').value;$('#opChar').innerHTML=S.chars.map(c=>`<option value="${c.classType}">${esc(c.cls)}</option>`).join('');if(cur)$('#opChar').value=cur;opExo();}
 async function opExo(){const ex=await get('/api/optimize/exotics?classType='+$('#opChar').value);
  $('#opExo').innerHTML='<option value="">Beliebiges Exotic</option>'+ex.map(x=>`<option value="${x.hash}">${esc(x.name)}</option>`).join('');}
 $('#opChar').onchange=opExo;
-$('#opRun').onclick=async()=>{const t=Object.fromEntries($$('#opTargets [data-st]').filter(x=>+x.value>0).map(x=>[x.dataset.st,+x.value]));
+// Schieberegler: von nie über bis (und umgekehrt), Anzeige "von – bis"
+$('#opTargets').oninput=e=>{const h=e.target.dataset.mn??e.target.dataset.mx;if(!h)return;const mn=$(`[data-mn="${h}"]`),mx=$(`[data-mx="${h}"]`);
+ if(+mn.value>+mx.value)(e.target===mn?mx:mn).value=e.target.value;
+ $(`[data-out="${h}"]`).textContent=+mn.value===0&&+mx.value===200?'egal':+mx.value===200?`ab ${mn.value}`:`${mn.value} – ${mx.value}`;};
+$('#opRun').onclick=async()=>{const t=Object.fromEntries($$('#opTargets [data-mn]').map(x=>[x.dataset.mn,+x.value,+$(`[data-mx="${x.dataset.mn}"]`).value]).filter(([,a,b])=>a>0||b<200).map(([h,a,b])=>[h,[a,b<200?b:0]]));
  $('#opOut').innerHTML='<span class="mut">Rechne …</span>';
  opRes=await get(`/api/optimize?classType=${$('#opChar').value}&exotic=${$('#opExo').value}&targets=${encodeURIComponent(JSON.stringify(t))}`);
  if(opRes.error||!opRes.length){$('#opOut').innerHTML=`<span class="mut">${esc(opRes.error??'Keine passende Rüstung gefunden.')}</span>`;opRes=[];return;}
@@ -734,9 +757,9 @@ async function loadPr(){prChar=S.chars.some(c=>c.id===prChar)?prChar:S.chars[0]?
  const p=await get('/api/progress?charId='+prChar).catch(e=>({error:e.message}));
  if(p.error)return setH('#prOut',`<span class="err">${esc(p.error)}</span>`);
  const bar=(a,b)=>`<div class="bar"><i style="width:${b?Math.min(100,a/b*100):100}%"></i></div>`;
- const q=l=>l.length?`<div class="wk">${l.map(x=>`<div class="card"><div class="row" style="gap:10px"><img src="${esc(img(x.icon))}" width="36" height="36" alt=""><div><b>${esc(x.name)}</b><div class="mut small">${esc(x.type)}</div></div></div>${x.objectives.map(o=>`<div class="obj"><div><span class="${o.done?'mut':''}">${o.done?'✓ ':''}${esc(o.desc||'Ziel')}</span>${bar(o.progress,o.total)}</div><span class="small" style="text-align:right">${fmt(o.progress)} / ${fmt(o.total)}</span></div>`).join('')}</div>`).join('')}</div>`:'<span class="mut">Keine.</span>';
+ const q=l=>l.length?`<div class="wk">${l.map(x=>`<div class="card"><div class="row" style="gap:10px">${x.icon?`<img src="${esc(img(x.icon))}" width="36" height="36" alt="">`:'<i class="noic"></i>'}<div><b>${esc(x.name)}</b><div class="mut small">${esc(x.type)}</div></div></div>${x.objectives.map(o=>`<div class="obj"><div><span class="${o.done?'mut':''}">${o.done?'✓ ':''}${esc(o.desc||'Ziel')}</span>${bar(o.progress,o.total)}</div><span class="small" style="text-align:right">${fmt(o.progress)} / ${fmt(o.total)}</span></div>`).join('')}</div>`).join('')}</div>`:'<span class="mut">Keine.</span>';
  setH('#prOut',`<h2>Triumphe</h2><div class="stats"><div class="stat"><span>Aktiver Triumph-Punktestand</span><b>${fmt(p.triumphs.active)}</b></div><div class="stat"><span>Gesamt (Lebenszeit)</span><b>${fmt(p.triumphs.lifetime)}</b></div><div class="stat"><span>Legacy</span><b>${fmt(p.triumphs.legacy)}</b></div></div>
- <h2>Ränge</h2><div class="wk">${p.ranks.map(r=>`<div class="card"><div class="row" style="gap:10px"><img src="${esc(img(r.icon))}" width="40" height="40" alt=""><div style="flex:1"><b>${esc(r.name)}</b><div class="small">${esc(r.step)}${r.resets?` <span class="mut">· ${r.resets}× zurückgesetzt</span>`:''}</div></div></div>${bar(r.progress,r.next)}<div class="mut small" style="margin-top:4px">${fmt(r.progress)} / ${fmt(r.next)}</div></div>`).join('')||'<span class="mut">Keine Ränge geladen.</span>'}</div>
+ <h2>Ränge</h2><div class="wk">${p.ranks.map(r=>`<div class="card"><div class="row" style="gap:10px">${r.icon?`<img src="${esc(img(r.icon))}" width="40" height="40" alt="">`:'<i class="noic"></i>'}<div style="flex:1"><b>${esc(r.name)}</b><div class="small">${esc(r.step)}${r.resets?` <span class="mut">· ${r.resets}× zurückgesetzt</span>`:''}</div></div></div>${bar(r.progress,r.next)}<div class="mut small" style="margin-top:4px">${fmt(r.progress)} / ${fmt(r.next)}</div></div>`).join('')||'<span class="mut">Keine Ränge geladen.</span>'}</div>
  <h2>Quests</h2>${q(p.quests.filter(x=>!x.bounty))}<h2>Bounties</h2>${q(p.quests.filter(x=>x.bounty))}`);}
 </script>
 <script type="module" src="app.mjs"></script>

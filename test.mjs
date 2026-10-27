@@ -15,6 +15,8 @@ import { createCore } from './core.mjs';
   const [best] = optimize(items, 0, { 1: 150 });
   assert.equal(best.items.filter((i) => i.tier === 6).length, 1);
   assert.equal(best.tot[1], 160); assert.equal(best.miss, 0);
+  const [capped] = optimize(items, 0, { 1: [0, 100] }); // bis-Wert wird eingehalten
+  assert.ok(capped.tot[1] <= 100 && capped.miss === 0);
 }
 
 // ---- Wishlist-Parser

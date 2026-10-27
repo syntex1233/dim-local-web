@@ -11,9 +11,11 @@ export const TAGS = ['favorit', 'behalten', 'zerlegen', 'pve', 'pvp', 'raid'];
 const val = (i, h) => i.stats?.find((s) => s.hash === h)?.value ?? 0;
 
 // Rüstungs-Optimierer: je Slot ein Teil der Klasse, höchstens ein Exotic (oder genau das gewünschte).
-// Bewertet wird zuerst, wie viel zu den Mindestwerten fehlt, dann die Summe aller Werte.
+// targets: {statHash: min} oder {statHash: [min, max]}. Bewertet wird zuerst, wie weit die Summe außerhalb von min–max liegt,
+// dann die Summe aller Werte.
 export function optimize(items, classType, targets = {}, exotic = 0, keep = 5) {
-  const want = Object.entries(targets).map(([h, v]) => [+h, +v]).filter(([, v]) => v > 0);
+  const want = Object.entries(targets).map(([h, v]) => [+h, ...(Array.isArray(v) ? [+v[0] || 0, +v[1] || Infinity] : [+v, Infinity])])
+    .filter(([, mn, mx]) => mn > 0 || mx < Infinity);
   const score = (i) => (want.length ? want.reduce((a, [h]) => a + val(i, h), 0) : i.stats.reduce((a, s) => a + s.value, 0));
   // ponytail: je Slot nur die 10 besten Legendären + 3 besten Exotics (13^5 Kombinationen); Pareto-Filter, falls das zu grob wird
   const slots = ARMOR.map((b) => {
@@ -28,7 +30,7 @@ export function optimize(items, classType, targets = {}, exotic = 0, keep = 5) {
       if (exotic && !exo) return;
       const tot = Object.fromEntries(hashes.map((h) => [h, 0]));
       for (const i of pick) for (const s of i.stats) tot[s.hash] += s.value;
-      const miss = want.reduce((a, [h, v]) => a + Math.max(0, v - (tot[h] ?? 0)), 0);
+      const miss = want.reduce((a, [h, mn, mx]) => a + Math.max(0, mn - (tot[h] ?? 0)) + Math.max(0, (tot[h] ?? 0) - mx), 0);
       const sum = hashes.reduce((a, h) => a + tot[h], 0);
       const last = best.at(-1);
       if (best.length < keep || miss < last.miss || (miss === last.miss && sum > last.sum)) {
