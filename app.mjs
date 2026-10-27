@@ -32,6 +32,11 @@ if (p.has('code')) {
 }
 // Beim Zurückkehren in die App sofort aktualisieren
 document.addEventListener('visibilitychange', () => { if (!document.hidden) core.sync(); });
-if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js');
+if ('serviceWorker' in navigator) {
+  // Neue Version übernommen -> einmal neu laden (nicht beim allerersten Start)
+  const had = !!navigator.serviceWorker.controller;
+  navigator.serviceWorker.addEventListener('controllerchange', () => had && location.reload());
+  navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' });
+}
 
 window.__setCore(core);

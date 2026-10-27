@@ -1,4 +1,4 @@
-<!doctype html><html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<!doctype html><html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="DIM Local"><meta name="theme-color" content="#0d0f13">
 <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icon-180.png"><link rel="icon" href="icon-180.png">
@@ -154,7 +154,7 @@ body{height:100dvh}
 @media(max-width:800px){
  body{flex-direction:column}
  /* iOS: fest an den Bildschirmrand, damit die Leiste ganz unten sitzt; 16px verhindert das Reinzoomen bei Eingabefeldern */
- body{position:fixed;inset:0;height:auto}
+ html{height:100%}body{position:fixed;inset:0;height:auto}
  input,select,textarea{font-size:16px}
  #q{min-width:0!important;width:100%}
  nav{order:2;width:auto;flex-direction:row;padding:5px 4px calc(5px + env(safe-area-inset-bottom));gap:0;border-right:0;border-top:1px solid var(--line);overflow-x:auto;background:#12151a;flex-shrink:0}
@@ -719,6 +719,8 @@ $('#emptyInv').onclick=async()=>{const n=carryItems.filter(i=>i.owner===eqChar&&
   err.length?toast(`${(w.ok??0)+(a?.ok??0)} verschoben, ${err.length} Fehler:<br>${err.slice(0,4).map(esc).join('<br>')}`,true):toast('Inventar geleert');});};
 // Bilder, die Bungie nicht liefert, ausblenden statt als kaputtes Symbol zeigen
 document.addEventListener('error',e=>{if(e.target.tagName==='IMG')e.target.style.visibility='hidden';},true);
+// iOS-Web-App: nach dem Schließen der Tastatur bleibt die Ansicht sonst verschoben/verkürzt
+addEventListener('focusout',()=>setTimeout(()=>{if(!document.activeElement?.matches('input,textarea,select'))scrollTo(0,0);},60));
 // Seiten: Optimierer, Woche, Fortschritt
 function showX(){const t=location.hash.slice(1);if(t==='optimizer')loadOp();if(t==='weekly')loadWk();if(t==='progress')loadPr();}
 addEventListener('hashchange',showX);setTimeout(showX,800);
