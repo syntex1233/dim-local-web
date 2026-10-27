@@ -2,7 +2,7 @@
 // Doku: https://bungie-net.github.io/multi/index.html
 import { BUNGIE } from './data.mjs';
 
-const COMPONENTS = [100, 102, 103, 104, 200, 201, 202, 205, 206, 300, 304, 305, 310].join(',');
+const COMPONENTS = [100, 102, 103, 104, 200, 201, 202, 205, 206, 300, 301, 304, 305, 310].join(',');
 
 export function authorizeUrl(clientId, state, lang = 'de') {
   return `${BUNGIE}/${lang}/OAuth/Authorize?client_id=${encodeURIComponent(clientId)}&response_type=code&state=${state}`;
@@ -71,6 +71,9 @@ export function createBungie(cfg, auth, saveAuth) {
   const mt = () => auth().membershipType;
   return {
     login,
+    get: (path) => api(path),
+    me: () => `/Destiny2/${mt()}/Profile/${auth().membershipId}`,
+    def: (type, hash, lc = 'en') => api(`/Destiny2/Manifest/${type}/${hash}/?lc=${lc}`),
     definition: (hash, lc = 'en') => api(`/Destiny2/Manifest/DestinyInventoryItemDefinition/${hash}/?lc=${lc}`),
     insertPlug: (item, characterId, socketIndex, plugItemHash) => api('/Destiny2/Actions/Items/InsertSocketPlugFree/',
       { plug: { socketIndex, socketArrayType: 0, plugItemHash }, itemId: item.id, characterId, membershipType: mt() }),

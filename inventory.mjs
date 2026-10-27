@@ -144,10 +144,11 @@ export function filterItems(items, query) {
     if (t.startsWith('is:')) f = IS[t.slice(3)] ?? (() => false);
     else if (t.startsWith('perk:')) f = (i) => i.perks.flat().some((p) => p.name.toLowerCase().includes(t.slice(5)));
     else if (t.startsWith('class:')) f = (i) => (CLASSES[i.cls] ?? '').toLowerCase().startsWith(t.slice(6));
+    else if (t.startsWith('tag:')) f = (i) => i.tag === t.slice(4);
     else if (t.startsWith('owner:')) f = (i) => i.owner === t.slice(6);
     else if (t.startsWith('slot:')) f = (i) => i.bucket === SLOT[t.slice(5)];
     else if (t.startsWith('type:')) f = (i) => i.type.toLowerCase() === t.slice(5).replace(/_/g, ' ');
-    else f = (i) => i.name.toLowerCase().includes(t) || i.type.toLowerCase().includes(t);
+    else f = (i) => i.name.toLowerCase().includes(t) || i.type.toLowerCase().includes(t) || !!i.note?.toLowerCase().includes(t);
     return neg ? (i) => !f(i) : f;
   });
   return items.filter((i) => tests.every((f) => f(i)));

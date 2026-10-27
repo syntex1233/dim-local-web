@@ -60,6 +60,12 @@ label{display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--mut)
 .char:hover{border-color:var(--line2);transform:translateY(-1px)}.char.sel{border-color:var(--acc)}
 .char b{font-size:20px}
 .sts{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:4px 18px}.st{display:grid;grid-template-columns:20px 120px 1fr 34px;gap:8px;align-items:center;font-size:13px}.st img,.st>i{width:20px;height:20px}.st b{text-align:right}.st .bar{height:6px;background:var(--line);border-radius:3px;overflow:hidden}.st .bar i{display:block;height:100%;background:var(--acc)}
+.bdg.tg{background:#3b4252;color:#fff}.dupe{display:grid;grid-template-columns:44px 1fr auto;gap:10px;align-items:center;padding:8px 0;border-top:1px solid var(--line)}.dupe:first-child{border-top:0}
+#dropBar{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);display:none;gap:8px;z-index:8;background:var(--side);border:1px solid var(--line2);border-radius:12px;padding:10px;box-shadow:0 10px 30px #000a}
+#dropBar.on{display:flex}#dropBar div{padding:16px 20px;border:1px dashed var(--line2);border-radius:8px;min-width:90px;text-align:center}#dropBar div.over,.char.over{border-color:var(--acc);background:#2a2618;outline:2px solid var(--acc)}
+.opt{display:flex;align-items:center;gap:6px;font-size:13px}.opt img{width:20px;height:20px}.opt input{width:72px}
+.lsts{display:flex;flex-wrap:wrap;gap:4px 14px;margin-top:8px;font-size:13px}.lsts span{display:flex;align-items:center;gap:4px}.lsts img{width:18px;height:18px}.lsts small{font-size:11px}
+.wk{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:10px}.obj{display:grid;grid-template-columns:1fr 90px;gap:8px;align-items:center;font-size:12px;margin-top:8px}.obj .bar{margin-top:4px}
 .carry{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:10px}.carry .items{grid-template-columns:repeat(3,1fr);max-width:240px}
 .eqwrap{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:14px}
 .pv img{width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:8px;margin-top:12px;background:#000;display:block}.pv i{display:block;margin-top:8px;color:var(--mut);font-size:13px}
@@ -146,7 +152,7 @@ body{height:100dvh}
  body{flex-direction:column}
  nav{order:2;width:auto;flex-direction:row;padding:5px 4px calc(5px + env(safe-area-inset-bottom));gap:0;border-right:0;border-top:1px solid var(--line);overflow-x:auto;background:#12151a;flex-shrink:0}
  nav{scrollbar-width:none}nav::-webkit-scrollbar{display:none}
- nav a{flex:1 1 0;flex-direction:column;gap:2px;padding:6px 0;min-width:0;justify-content:center;text-align:center}
+ nav a{flex:1 0 auto;flex-direction:column;gap:2px;padding:6px 4px;min-width:58px;justify-content:center;text-align:center}
  nav a .tx{display:none}nav a::after{content:attr(data-s);font-size:10px;white-space:nowrap}
  nav a .ic{font-size:18px;width:auto}
  nav .logo,#status{display:none}
@@ -177,7 +183,7 @@ body{height:100dvh}
 <nav>
 <div class="logo">DIM <span>Local</span></div>
 <a href="#home" data-s="Start"><span class="ic">◈</span><span class="tx">Übersicht</span></a><a href="#inv" data-s="Inventar"><span class="ic">▦</span><span class="tx">Inventar</span></a>
-<a href="#godroll" data-s="Godrolls"><span class="ic">★</span><span class="tx">Godroll-Finder</span></a><a href="#loadouts" data-s="Loadouts"><span class="ic">⚔</span><span class="tx">Loadouts</span></a><a href="#transmog" data-s="Transmog"><span class="ic">✦</span><span class="tx">Transmog</span></a>
+<a href="#godroll" data-s="Godrolls"><span class="ic">★</span><span class="tx">Godroll-Finder</span></a><a href="#loadouts" data-s="Loadouts"><span class="ic">⚔</span><span class="tx">Loadouts</span></a><a href="#transmog" data-s="Transmog"><span class="ic">✦</span><span class="tx">Transmog</span></a><a href="#optimizer" data-s="Optimierer"><span class="ic">⚖</span><span class="tx">Optimierer</span></a><a href="#weekly" data-s="Woche"><span class="ic">☼</span><span class="tx">Woche</span></a><a href="#progress" data-s="Fortschritt"><span class="ic">▲</span><span class="tx">Fortschritt</span></a>
 <a href="#search" data-s="Suchen"><span class="ic">⌕</span><span class="tx">Such-Shortcuts</span></a><a href="#settings" data-s="Setup"><span class="ic">⚙</span><span class="tx">Einstellungen</span></a>
 <button id="syncBtn" data-run='{"type":"sync"}' title="Inventar neu laden (F5)">⟳ Aktualisieren</button>
 <div id="status"></div>
@@ -186,8 +192,8 @@ body{height:100dvh}
 
 <section data-tab="home">
 <h1>Übersicht</h1><p class="sub" id="conn"></p>
-<div id="setup"></div>
-<div class="chars" id="chars"></div>
+<div id="setup"></div><div id="xAlerts"></div><div id="vaultWarn"></div>
+<div class="chars" id="chars"></div><div id="farmBox" style="margin-top:10px"></div>
 <div id="cstats"></div><h2 id="eqTitle">Aktuelle Ausrüstung</h2><div class="eqwrap" id="equip"></div>
 <h2 id="carryTitle">Dabei</h2><div class="carry" id="carry"></div>
 <h2 id="subTitle">Subklasse</h2><div id="subclass"></div>
@@ -196,7 +202,7 @@ body{height:100dvh}
 <h2 id="pmTitle">Postmaster</h2><div id="pmList"></div>
 <h2>Ressourcen</h2><div class="stats" id="stats"></div>
 <h2>Schnellzugriff</h2>
-<div class="row"><button data-q="is:godroll is:weapon">Meine Godrolls</button><button data-q="is:godroll -is:locked">Ungesperrte Godrolls</button><button data-q="is:trash -is:locked">Trash-Rolls</button><button data-q="is:dupe is:weapon -is:godroll -is:locked">Dupes ohne Godroll</button></div>
+<div class="row"><button data-q="is:godroll is:weapon">Meine Godrolls</button><button data-q="is:godroll -is:locked">Ungesperrte Godrolls</button><button data-q="is:trash -is:locked">Trash-Rolls</button><button data-q="is:dupe is:weapon -is:godroll -is:locked">Dupes ohne Godroll</button><button data-q="tag:zerlegen">Zum Zerlegen markiert</button><button data-junk>Zerlege-Stapel holen</button></div>
 <div class="row" id="homeShortcuts" style="margin-top:8px"></div>
 </section>
 
@@ -213,8 +219,8 @@ body{height:100dvh}
 <select id="fSort" aria-label="Sortierung"><option value="slot">Nach Slot gruppiert</option><option value="power">Power</option><option value="name">Name</option><option value="type">Typ</option></select>
 </div>
 <div class="row" style="justify-content:space-between;margin-top:10px"><div class="row"><div class="tabs" id="owners"></div><div class="tabs" id="gfilt"></div></div>
-<div class="row small"><span class="mut">Alle Treffer:</span><button class="sm" data-bulk="vault">in den Tresor</button><button class="sm" data-bulk="char">zum aktuellen Charakter</button><button class="sm" data-bulk="lock">sperren</button><button class="sm" data-bulk="unlock">entsperren</button></div></div>
-<p class="mut small help" style="margin:8px 0 0">Suche: <code>is:godroll</code> <code>is:pve</code> <code>is:pvp</code> <code>is:trash</code> <code>is:locked</code> <code>is:dupe</code> <code>is:vault</code> <code>is:crafted</code> <code>perk:…</code> <code>slot:helm</code> <code>type:automatikgewehr</code> – mit <code>-</code> davor verneint.</p>
+<div class="row small"><span class="mut">Alle Treffer:</span><button class="sm" data-bulk="vault">in den Tresor</button><button class="sm" data-bulk="char">zum aktuellen Charakter</button><button class="sm" data-bulk="lock">sperren</button><button class="sm" data-bulk="unlock">entsperren</button><button class="sm" data-junk title="Alle zum Zerlegen markierten Items auf den aktuellen Charakter">Zerlege-Stapel holen</button></div></div>
+<p class="mut small help" style="margin:8px 0 0">Suche: <code>is:godroll</code> <code>is:pve</code> <code>is:pvp</code> <code>is:trash</code> <code>is:locked</code> <code>is:dupe</code> <code>is:vault</code> <code>is:crafted</code> <code>tag:zerlegen</code> <code>tag:favorit</code> <code>perk:…</code> <code>slot:helm</code> <code>type:automatikgewehr</code> – mit <code>-</code> davor verneint.</p>
 </div>
 <div id="items" style="margin-top:6px"></div>
 </section>
@@ -247,6 +253,18 @@ body{height:100dvh}
 <h2>Spiel-Loadouts</h2>
 <div id="loList"></div>
 </section>
+
+<section data-tab="optimizer">
+<h1>Rüstungs-Optimierer</h1><p class="sub">Mindestwerte eingeben – die App sucht aus deiner ganzen Rüstung (Charaktere und Tresor) die beste Kombination mit höchstens einem Exotic und speichert sie als Loadout. Mods, Fragmente und Tuning sind nicht eingerechnet.</p>
+<div class="card" style="display:grid;gap:12px">
+<div class="row"><select id="opChar" aria-label="Klasse"></select><select id="opExo" aria-label="Exotic"><option value="">Beliebiges Exotic</option></select><button class="pri" id="opRun">Beste Kombination suchen</button></div>
+<div class="row" id="opTargets" style="gap:14px"></div></div>
+<div id="opOut"></div>
+</section>
+
+<section data-tab="weekly"><h1>Diese Woche</h1><p class="sub" id="wkReset"></p><div id="wkOut"><span class="mut">Lädt …</span></div></section>
+
+<section data-tab="progress"><h1>Fortschritt</h1><p class="sub">Ränge, Quests, Bounties und Triumph-Punkte.</p><div class="tabs" id="prChars"></div><div id="prOut"><span class="mut">Lädt …</span></div></section>
 
 <section data-tab="search">
 <h1>Such-Shortcuts</h1><p class="sub">Gespeicherte Suchen. Mit Aktion werden alle Treffer direkt verschoben oder gesperrt.</p>
@@ -376,8 +394,8 @@ async function loadItems(){if(location.hash!=='#inv')return;
  $('#hitCount').textContent=`${items.length} Items`;
  const srt=$('#fSort').value;
  items.sort(srt==='name'?(a,b)=>a.name.localeCompare(b.name,'de'):srt==='type'?(a,b)=>a.type.localeCompare(b.type,'de')||b.power-a.power:srt==='power'?(a,b)=>b.power-a.power:(a,b)=>bIdx(a)-bIdx(b)||b.power-a.power);
- const cell=i=>`<div class="it t${i.tier}" data-item="${esc(i.id)}" title="${esc(i.name)} · ${esc(i.type)} · ${esc(charName(i.owner))}${i.god.length?' · Godroll: '+esc(i.god.join(', ')):''}">
-  <img src="${esc(img(i.icon))}" alt="${esc(i.name)}" loading="lazy"><div class="bd">${i.god.length?'<span class="bdg">GOD</span>':''}${i.trash?'<span class="bdg trash">TRASH</span>':''}${i.equipped?'<span class="bdg eq">E</span>':''}${i.locked?'<span class="bdg lock">🔒</span>':''}</div>
+ const cell=i=>`<div class="it t${i.tier}" draggable="true" data-item="${esc(i.id)}" title="${esc(i.name)} · ${esc(i.type)} · ${esc(charName(i.owner))}${i.god.length?' · Godroll: '+esc(i.god.join(', ')):''}">
+  <img src="${esc(img(i.icon))}" alt="${esc(i.name)}" loading="lazy"><div class="bd">${i.god.length?'<span class="bdg">GOD</span>':''}${i.trash?'<span class="bdg trash">TRASH</span>':''}${i.equipped?'<span class="bdg eq">E</span>':''}${i.locked?'<span class="bdg lock">🔒</span>':''}${i.tag?`<span class="bdg tg" title="${TAGN[i.tag]}">${TAGI[i.tag]}</span>`:''}</div>
   ${i.power?`<span class="pw">${i.power}</span>`:''}</div>`;
  if(!items.length){$('#items').innerHTML='<span class="mut">Keine Treffer.</span>';return;}
  if(srt!=='slot'){$('#items').innerHTML=`<div class="items">${items.map(cell).join('')}</div>`;return;}
@@ -390,7 +408,7 @@ $('#chars').onclick=e=>{const c=e.target.closest('[data-eqc]');if(c&&!e.target.c
 let pmItems=[],carryItems=[];
 async function loadEquip(){[eqItems,pmItems,carryItems]=await Promise.all([get('/api/items?limit=200&q=is:equipped'),get('/api/items?limit=500&q=is:postmaster'),get('/api/items?limit=2000&q=-is:vault -is:equipped -is:postmaster')]);render();}
 // Was der Charakter dabei hat (nicht angelegt), je Slot wie im Spiel – 9 Plätze neben dem angelegten Item
-const itTile=i=>`<div class="it ${i.tier===6?'exo':''}" data-item="${esc(i.id??'')}" title="${esc(i.name)} · ${esc(i.type)}"><img src="${esc(img(i.icon))}" alt="${esc(i.name)}" loading="lazy">${i.amount>1?`<span class="pw">${i.amount}</span>`:i.power?`<span class="pw">${i.power}</span>`:''}</div>`;
+const itTile=i=>`<div class="it ${i.tier===6?'exo':''}" draggable="true" data-item="${esc(i.id??'')}" title="${esc(i.name)} · ${esc(i.type)}"><img src="${esc(img(i.icon))}" alt="${esc(i.name)}" loading="lazy">${i.amount>1?`<span class="pw">${i.amount}</span>`:i.power?`<span class="pw">${i.power}</span>`:''}</div>`;
 function carryHtml(){const mine=carryItems.filter(i=>i.owner===eqChar);
  return BUCKETS.map(([b,n])=>[b,n,mine.filter(i=>i.bucket===b)]).filter(([b,,l])=>l.length||SLOTS.includes(b)).map(([b,n,l])=>`<div class="card"><div class="row" style="justify-content:space-between"><b>${n}</b><span class="mut small ${l.length>=9?'err':''}">${l.length}/9</span></div><div class="items" style="margin-top:8px">${l.map(itTile).join('')||'<span class="mut small">leer</span>'}</div></div>`).join('');}
 function equipHtml(){const ch=S.chars.find(c=>c.id===eqChar)??S.chars[0];if(!ch)return '';eqChar=ch.id;
@@ -430,7 +448,7 @@ function subclassHtml(i){const ps=i.setup.filter(p=>!/^(leer|empty)/i.test(p.nam
 // Werte mit Balken; Zahlenwerte ohne festen Rahmen (Kadenz, Magazin, Lade-/Spannzeit) nur als Zahl
 const NUMSTAT=new Set([4284893193,3871231066,2961396640,447667954,1931675084]);
 const statsHtml=(l,max)=>`<div class="sts">${l.map(s=>`<div class="st" title="${esc(s.name)}">${s.icon?`<img src="${esc(img(s.icon))}" alt="">`:'<i></i>'}<span>${esc(s.name)}</span><div class="bar">${NUMSTAT.has(s.hash)?'':`<i style="width:${Math.min(100,s.value/max*100)}%"></i>`}</div><b>${s.value}</b></div>`).join('')}</div>`;
-async function openItem(id){const i=(await get('/api/items?limit=5000&q=')).find(x=>x.id===id);if(!i)return;
+async function openItem(id){const all=await get('/api/items?limit=5000&q='),i=all.find(x=>x.id===id);if(!i)return;
  const ex=i.itemType===3?await get('/api/godroll/item?id='+encodeURIComponent(id)):null,gold=new Set(ex?.rolls?.flatMap(r=>r.have)??[]);
  if(i.setup)await needDescs(i.setup);if(i.mods)await needDescs(i.mods);
  $$('.it.sel').forEach(e=>e.classList.remove('sel'));$(`.it[data-item="${CSS.escape(id)}"]`)?.classList.add('sel');
@@ -447,6 +465,7 @@ async function openItem(id){const i=(await get('/api/items?limit=5000&q=')).find
   ${i.mods?`<h2>Mods</h2>${modSlots(i)}`:''}
   ${i.setup?subclassHtml(i):`<h2>Verschieben</h2><div class="card" style="display:grid;gap:8px">${moves}
   <div class="row" style="justify-content:space-between"><span>Tresor</span><button class="sm" data-mv="${esc(id)}" data-to="vault" ${i.owner==='vault'?'disabled':''}>In den Tresor</button></div></div>`}
+  ${extraItemHtml(i,all)}
   ${i.lockable?`<button data-lk="${esc(id)}" data-state="${i.locked?0:1}">${i.locked?'Entsperren':'Sperren'}</button>`:''}
   <button data-q="${esc(i.name)}">Alle „${esc(i.name)}“ zeigen</button>`;
  $('#drawer').classList.add('open');
@@ -557,6 +576,7 @@ function myLoHtml(s){return s.myLoadouts.map(l=>{const gear=l.items.filter(x=>x.
  <button class="sm" data-share="${esc(l.id)}">DIM-Link kopieren</button><button class="sm" data-del="loadouts:${esc(l.id)}" aria-label="Löschen">✕</button></div></div>
  <div class="items" style="margin-top:8px;grid-template-columns:repeat(auto-fill,52px)">${gear.map(x=>`<div class="it" style="cursor:default${x.owned?'':';opacity:.35'}" title="${esc(x.name)}${x.equip?'':' (nur mitnehmen)'}${x.owned?'':' – nicht im Inventar'}"><img src="${esc(img(x.icon))}" alt="${esc(x.name)}">${x.equip?'':'<div class="bd"><span class="bdg lock">+</span></div>'}</div>`).join('')}</div>
  ${l.notes?`<div class="mut small" style="margin-top:6px">${esc(l.notes)}</div>`:''}${l.mods.length?`<div class="mods" title="Mods, Shader und Ornamente">${l.mods.map(m=>`<img src="${esc(img(m.icon))}" alt="${esc(m.name)}" title="${esc(m.name)}">`).join('')}</div>`:''}
+ ${l.stats?.length?`<div class="lsts" title="Werte der Rüstung (Klammer: Unterschied zur angelegten)">${l.stats.map(s=>`<span title="${esc(s.name)}">${s.icon?`<img src="${esc(img(s.icon))}" alt="">`:esc(s.name)+' '}${s.value}${s.diff?`<small style="color:var(--${s.diff>0?'ok':'bad'})">(${s.diff>0?'+':''}${s.diff})</small>`:''}</span>`).join('')}</div>`:''}
  <div class="mut small" style="margin-top:6px">${[sub&&'mit Subklassen-Setup',l.mods.length&&l.mods.length+' Mods/Shader',skip&&skip+' Einträge, die nicht anlegbar sind'].filter(Boolean).join(' · ')}</div></div>`;}).join('')||'<span class="mut">Noch keine eigenen Loadouts.</span>';}
 
 // ---- Shortcuts
@@ -630,6 +650,94 @@ let lastSync=null;
 async function tick(){try{S=await get('/api/state');render();if(S.synced!==lastSync){lastSync=S.synced;loadItems();loadEquip();loadTm();}}
  catch{$('#status').innerHTML='<span class="dot" style="background:var(--bad)"></span>App-Server nicht erreichbar';}}
 show();tick();setInterval(tick,2000);
+// ---- Zusatzfunktionen: Tags & Notizen, Dupe-Vergleich, Aufräumen, Drag & Drop, Farmen, Godroll-Hinweise, Optimierer, Woche, Fortschritt
+const TAGI={favorit:'♥',behalten:'✓',zerlegen:'✗',pve:'PvE',pvp:'PvP',raid:'Raid'},TAGN={favorit:'Favorit',behalten:'Behalten',zerlegen:'Zerlegen',pve:'PvE',pvp:'PvP',raid:'Raid'};
+let X={alerts:[],cleanup:[],farm:null,farmLog:''},xBusy=false;
+const setH=(sel,h)=>{const e=$(sel);if(e&&e.dataset.h!==h){e.dataset.h=h;e.innerHTML=h;}};
+// Item-Details: Tags, Notiz und gleiche Items im Vergleich
+function extraItemHtml(i,all){if(!i.id)return '';
+ const dupes=all.filter(x=>x.name===i.name&&x.id!==i.id).sort((a,b)=>b.god.length-a.god.length||b.power-a.power);
+ const perks=x=>x.perks.flat().filter(p=>p.active).map(p=>p.name).join(' · ');
+ const total=x=>(x.stats??[]).reduce((a,s)=>a+s.value,0);
+ return `<h2>Markierung</h2><div class="row">${Object.keys(TAGI).map(t=>`<button class="sm ${i.tag===t?'act':''}" data-tag="${esc(i.id)}:${t}">${TAGI[t]} ${TAGN[t]}</button>`).join('')}</div>
+ <div class="row" style="margin-top:8px"><input id="noteIn" value="${esc(i.note??'')}" placeholder="Notiz, z.B. für Raid-Build" style="flex:1"><button class="sm" data-note="${esc(i.id)}">Notiz speichern</button></div>
+ ${dupes.length?`<h2>Gleiche Items (${dupes.length})</h2><div class="card">${dupes.map(x=>`<div class="dupe" data-item="${esc(x.id)}" style="cursor:pointer"><b>${x.power||''}</b><div><span class="small">${esc(charName(x.owner))}${x.locked?' · gesperrt':''}${x.tag?' · '+TAGN[x.tag]:''}</span>${x.itemType===3?`<div class="mut small">${esc(perks(x))}</div>`:x.stats?.length?`<div class="mut small">Summe Werte ${total(x)} (dieses: ${total(i)})</div>`:''}</div><span>${x.god.length?'<span class="bdg">GOD</span>':''}${x.trash?'<span class="bdg trash">TRASH</span>':''}</span></div>`).join('')}</div>`:''}`;}
+// Übersicht: Godroll-Hinweise, Tresor-Warnung, Farmen
+const _render=render;
+render=function(){_render();if(xBusy)return;xBusy=true;get('/api/extra/state').then(x=>{X=x;renderX();}).catch(()=>{}).finally(()=>xBusy=false);};
+let lastAlert=+(()=>{try{return localStorage.getItem('lastAlert')}catch{}})()||0;
+function renderX(){
+ const fresh=X.alerts.filter(a=>a.at>lastAlert);
+ if(fresh.length){lastAlert=fresh[0].at;try{localStorage.setItem('lastAlert',lastAlert)}catch{}
+  toast(`Neuer Godroll: ${fresh.map(a=>esc(a.name)).join(', ')}`);
+  try{if('Notification' in window){const n=()=>new Notification('Neuer Godroll',{body:fresh.map(a=>a.name+' – '+a.god[0]).join('\n'),icon:img(fresh[0].icon)});
+   Notification.permission==='granted'?n():Notification.permission!=='denied'&&Notification.requestPermission().then(p=>p==='granted'&&n());}}catch{}}
+ const recent=X.alerts.filter(a=>Date.now()-a.at<24*3600e3);
+ setH('#xAlerts',recent.length?`<div class="card" style="border-color:var(--acc)"><b style="color:var(--acc)">Neue Godrolls</b><div class="row" style="margin-top:8px">${recent.map(a=>`<div class="tile click" data-item="${esc(a.id)}" title="${esc(a.god.join(', '))}"><img src="${esc(img(a.icon))}" alt=""><div class="t"><b>${esc(a.name)}</b><span class="mut small">${new Date(a.at).toLocaleTimeString('de-DE')}</span></div></div>`).join('')}</div></div>`:'');
+ const v=S.vaultCount,max=S.limits?.vault;
+ setH('#vaultWarn',max&&v>=max-50?`<div class="card" style="border-color:var(--bad)"><b class="err">Tresor fast voll: ${v} / ${max}</b><div class="mut small" style="margin:4px 0 8px">Kandidaten zum Aufräumen:</div><div class="row">${X.cleanup.filter(c=>c.n).map(c=>`<button class="sm" data-q="${esc(c.query)}">${esc(c.label)} (${c.n})</button>`).join('')||'<span class="mut small">Keine offensichtlichen Kandidaten.</span>'}</div></div>`:'');
+ const fc=S.chars.find(c=>c.id===X.farm);
+ setH('#farmBox',S.chars.length?`<div class="card row" style="justify-content:space-between${fc?';border-color:var(--acc)':''}"><div><b>Farmen-Modus</b> <span class="mut small">${fc?`aktiv auf ${esc(fc.cls)} – schiebt jede Minute Postmaster-Ausrüstung und überzählige Items (nicht gesperrt, kein Godroll, kein Favorit) in den Tresor${X.farmLog?'<br>'+esc(X.farmLog):''}`:'hält Platz im Inventar frei, damit beim Spielen nichts im Postmaster verloren geht'}</span></div>
+  <div class="row">${fc?'<button class="sm" data-farm="">Stoppen</button>':S.chars.map(c=>`<button class="sm" data-farm="${c.id}">Farmen mit ${esc(c.cls)}</button>`).join('')}</div></div>`:'');}
+// Drag & Drop: Item auf Charakter oder Tresor ziehen
+let dragId=null;
+const dropBar=document.createElement('div');dropBar.id='dropBar';document.body.append(dropBar);
+document.addEventListener('dragstart',e=>{const t=e.target.closest?.('[data-item][draggable]');if(!t)return;dragId=t.dataset.item;e.dataTransfer.setData('text/plain',dragId);
+ dropBar.innerHTML=[...S.chars.map(c=>[c.id,c.cls]),['vault','Tresor']].map(([id,l])=>`<div data-drop="${id}">${esc(l)}</div>`).join('');dropBar.classList.add('on');});
+document.addEventListener('dragend',()=>{dropBar.classList.remove('on');$$('.over').forEach(x=>x.classList.remove('over'));});
+const dropT=e=>e.target.closest?.('[data-drop],[data-eqc]');
+document.addEventListener('dragover',e=>{const t=dropT(e);if(!t||!dragId)return;e.preventDefault();$$('.over').forEach(x=>x!==t&&x.classList.remove('over'));t.classList.add('over');});
+document.addEventListener('drop',e=>{const t=dropT(e);if(!t||!dragId)return;e.preventDefault();const to=t.dataset.drop??t.dataset.eqc;
+ dropBar.classList.remove('on');act('/api/move',{id:dragId,target:to},'Verschoben nach '+charName(to));dragId=null;});
+// Klicks der Zusatzfunktionen
+document.addEventListener('click',async e=>{const b=e.target.closest('button');if(!b)return;const d=b.dataset;
+ if(d.tag){const [id,t]=d.tag.split(':'),i=(await get('/api/items?limit=5000&q=')).find(x=>x.id===id);if(!i)return;const tag=i.tag===t?'':t;
+  if(tag==='zerlegen'&&(i.god.length||i.locked)&&!confirm(`${i.name} ist ${i.god.length?'ein Godroll':'gesperrt'}. Trotzdem zum Zerlegen markieren?`))return;
+  await api('/api/tag',{id,tag,note:i.note});openItem(id);loadItems();}
+ if(d.note){const i=(await get('/api/items?limit=5000&q=')).find(x=>x.id===d.note);await api('/api/tag',{id:d.note,tag:i?.tag??'',note:$('#noteIn').value.trim()});toast('Notiz gespeichert');}
+ if(d.junk!==undefined){const n=(await get('/api/items?limit=5000&q='+encodeURIComponent('tag:zerlegen -is:equipped'))).length;
+  if(!n)return toast('Nichts zum Zerlegen markiert – im Item-Fenster „✗ Zerlegen“ wählen.',true);
+  if(confirm(`${n} markierte Items auf deinen aktuellen Charakter holen?`))act('/api/bulk',{query:'tag:zerlegen',action:'char'},'Zerlege-Stapel ist auf deinem Charakter – jetzt im Spiel zerlegen');}
+ if(d.farm!==undefined)api('/api/farm',{charId:d.farm}).then(()=>{toast(d.farm?'Farmen-Modus an':'Farmen-Modus aus');render();}).catch(e=>toast(esc(e.message),true));
+ if(d.prc){prChar=d.prc;loadPr();}
+ if(d.ops!==undefined||d.opa!==undefined){const r=opRes[+(d.ops??d.opa)],ct=+$('#opChar').value,name=prompt('Name für das Loadout:','Optimierer '+r.stats.map(s=>s.value).join('/'));if(!name)return;
+  const lo=await api('/api/optimize/save',{ids:r.items.map(i=>i.id),classType:ct,name});tick();
+  if(d.opa!==undefined){const c=S.chars.find(c=>c.classType===ct);if(c)act('/api/myloadout/apply',{id:lo.id,charId:c.id},'Loadout angelegt');}else toast('Loadout gespeichert – unter „Loadouts“');}});
+// Seiten: Optimierer, Woche, Fortschritt
+function showX(){const t=location.hash.slice(1);if(t==='optimizer')loadOp();if(t==='weekly')loadWk();if(t==='progress')loadPr();}
+addEventListener('hashchange',showX);setTimeout(showX,800);
+let opStats=null,opRes=[];
+async function loadOp(){if(!S.chars.length)return;
+ if(!opStats?.length){const a=await get('/api/items?limit=1&q=is:armor');opStats=a[0]?.stats??[];
+  $('#opTargets').innerHTML=opStats.map(s=>`<label class="opt" title="Mindestwert ${esc(s.name)}">${s.icon?`<img src="${esc(img(s.icon))}" alt="">`:''}${esc(s.name)}<input type="number" min="0" max="250" step="5" data-st="${s.hash}" placeholder="0"></label>`).join('')||'<span class="mut">Noch keine Rüstung mit Werten geladen.</span>';}
+ const cur=$('#opChar').value;$('#opChar').innerHTML=S.chars.map(c=>`<option value="${c.classType}">${esc(c.cls)}</option>`).join('');if(cur)$('#opChar').value=cur;opExo();}
+async function opExo(){const ex=await get('/api/optimize/exotics?classType='+$('#opChar').value);
+ $('#opExo').innerHTML='<option value="">Beliebiges Exotic</option>'+ex.map(x=>`<option value="${x.hash}">${esc(x.name)}</option>`).join('');}
+$('#opChar').onchange=opExo;
+$('#opRun').onclick=async()=>{const t=Object.fromEntries($$('#opTargets [data-st]').filter(x=>+x.value>0).map(x=>[x.dataset.st,+x.value]));
+ $('#opOut').innerHTML='<span class="mut">Rechne …</span>';
+ opRes=await get(`/api/optimize?classType=${$('#opChar').value}&exotic=${$('#opExo').value}&targets=${encodeURIComponent(JSON.stringify(t))}`);
+ if(opRes.error||!opRes.length){$('#opOut').innerHTML=`<span class="mut">${esc(opRes.error??'Keine passende Rüstung gefunden.')}</span>`;opRes=[];return;}
+ $('#opOut').innerHTML=opRes.map((r,n)=>`<div class="card" style="margin-top:10px"><div class="row" style="justify-content:space-between"><b>Vorschlag ${n+1}${r.miss?` <span class="err small">– es fehlen ${r.miss} Punkte</span>`:' <span class="small" style="color:var(--ok)">– alle Ziele erreicht</span>'}</b>
+  <div class="row"><button class="sm" data-ops="${n}">Als Loadout speichern</button><button class="sm pri" data-opa="${n}">Speichern &amp; anlegen</button></div></div>
+  <div class="items" style="margin:10px 0;grid-template-columns:repeat(auto-fill,58px)">${r.items.map(i=>`<div class="it ${i.tier===6?'exo':''}" data-item="${esc(i.id)}" title="${esc(i.name)} · ${esc(charName(i.owner))}"><img src="${esc(img(i.icon))}" alt="${esc(i.name)}"></div>`).join('')}</div>
+  ${statsHtml(r.stats,200)}</div>`).join('');};
+async function loadWk(){const n=new Date(),r=new Date(n);r.setUTCHours(17,0,0,0);r.setUTCDate(r.getUTCDate()+(2-r.getUTCDay()+7)%7);if(r<=n)r.setUTCDate(r.getUTCDate()+7);
+ $('#wkReset').textContent=`Nächster Wochen-Reset: ${r.toLocaleString('de-DE',{weekday:'long',day:'numeric',month:'long',hour:'2-digit',minute:'2-digit'})} – noch ${Math.floor((r-n)/864e5)} Tage ${Math.floor((r-n)/36e5)%24} Std.`;
+ const w=await get('/api/weekly').catch(e=>({error:e.message}));
+ if(w.error)return setH('#wkOut',`<span class="err">${esc(w.error)}</span>`);
+ setH('#wkOut',`<h2>Xûr</h2>${w.xur?.length?`<div class="grid">${w.xur.map(x=>`<div class="tile ${x.tier===6?'exo':''}"><img src="${esc(img(x.icon))}" alt=""><div class="t"><b>${esc(x.name)}</b><span class="mut small">${esc(x.type)}</span></div></div>`).join('')}</div>`:`<span class="mut">Xûr ist gerade nicht da – er kommt freitags und bleibt bis zum Reset.${w.xurErr?` (Bungie: ${esc(w.xurErr)} – falls das dauerhaft kommt: in deiner Bungie-App den Scope „Read your Destiny vendor and advisor information“ anhaken und neu anmelden)`:''}</span>`}
+ <h2>Wöchentliche Aktivitäten &amp; Meilensteine</h2><div class="wk">${w.milestones.map(m=>`<div class="card"><div class="row" style="gap:10px">${m.icon?`<img src="${esc(img(m.icon))}" width="40" height="40" alt="">`:''}<b>${esc(m.name)}</b></div>${m.desc?`<div class="mut small" style="margin-top:6px">${esc(m.desc)}</div>`:''}${m.acts.length?`<div class="small" style="margin-top:6px">${m.acts.map(esc).join(' · ')}</div>`:''}${m.end?`<div class="mut small" style="margin-top:6px">bis ${new Date(m.end).toLocaleString('de-DE',{weekday:'short',day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}</div>`:''}</div>`).join('')}</div>`);}
+let prChar=null;
+async function loadPr(){prChar=S.chars.some(c=>c.id===prChar)?prChar:S.chars[0]?.id;
+ setH('#prChars',S.chars.map(c=>`<button class="sm ${c.id===prChar?'act':''}" data-prc="${c.id}">${esc(c.cls)}</button>`).join(''));if(!prChar)return;
+ const p=await get('/api/progress?charId='+prChar).catch(e=>({error:e.message}));
+ if(p.error)return setH('#prOut',`<span class="err">${esc(p.error)}</span>`);
+ const bar=(a,b)=>`<div class="bar"><i style="width:${b?Math.min(100,a/b*100):100}%"></i></div>`;
+ const q=l=>l.length?`<div class="wk">${l.map(x=>`<div class="card"><div class="row" style="gap:10px"><img src="${esc(img(x.icon))}" width="36" height="36" alt=""><div><b>${esc(x.name)}</b><div class="mut small">${esc(x.type)}</div></div></div>${x.objectives.map(o=>`<div class="obj"><div><span class="${o.done?'mut':''}">${o.done?'✓ ':''}${esc(o.desc||'Ziel')}</span>${bar(o.progress,o.total)}</div><span class="small" style="text-align:right">${fmt(o.progress)} / ${fmt(o.total)}</span></div>`).join('')}</div>`).join('')}</div>`:'<span class="mut">Keine.</span>';
+ setH('#prOut',`<h2>Triumphe</h2><div class="stats"><div class="stat"><span>Aktiver Triumph-Punktestand</span><b>${fmt(p.triumphs.active)}</b></div><div class="stat"><span>Gesamt (Lebenszeit)</span><b>${fmt(p.triumphs.lifetime)}</b></div><div class="stat"><span>Legacy</span><b>${fmt(p.triumphs.legacy)}</b></div></div>
+ <h2>Ränge</h2><div class="wk">${p.ranks.map(r=>`<div class="card"><div class="row" style="gap:10px"><img src="${esc(img(r.icon))}" width="40" height="40" alt=""><div style="flex:1"><b>${esc(r.name)}</b><div class="small">${esc(r.step)}${r.resets?` <span class="mut">· ${r.resets}× zurückgesetzt</span>`:''}</div></div></div>${bar(r.progress,r.next)}<div class="mut small" style="margin-top:4px">${fmt(r.progress)} / ${fmt(r.next)}</div></div>`).join('')||'<span class="mut">Keine Ränge geladen.</span>'}</div>
+ <h2>Quests</h2>${q(p.quests.filter(x=>!x.bounty))}<h2>Bounties</h2>${q(p.quests.filter(x=>x.bounty))}`);}
 </script>
 <script type="module" src="app.mjs"></script>
 </body></html>

@@ -3,6 +3,7 @@
 import { createData, I } from './data.mjs';
 import { authorizeUrl, createBungie } from './bungie.mjs';
 import { buildInventory, filterItems, GEAR, VAULT } from './inventory.mjs';
+import { createExtra } from './extra.mjs';
 
 const DEFAULT_SETTINGS = {
   wishlistUrls: 'https://raw.githubusercontent.com/48klocs/dim-wish-list-sources/master/voltron.txt',
@@ -121,8 +122,11 @@ export function createCore({ store, cache, auth = '', visible = () => true, bung
       const profile = live.profile = await bungie.profile();
       live.inv = buildInventory(profile, data);
       live.synced = new Date().toISOString(); live.error = null;
+      await extra.afterSync();
     } catch (e) { live.error = e.message; }
   }
+
+  const extra = createExtra({ db, live, data, bungie, move: (...a) => move(...a), save, addLoadout: (l) => addLoadout(l), current: () => current() });
 
   // ---------- Aktionen ----------
   const find = (id) => live.inv?.items.find((i) => i.id === id) ?? (() => { throw new Error('Item nicht gefunden – neu laden'); })();
@@ -322,7 +326,7 @@ export function createCore({ store, cache, auth = '', visible = () => true, bung
               data: data.status, settings: db.settings, shortcuts: db.shortcuts, hotkeys: db.hotkeys,
               fashion: db.fashion.map((f) => ({ ...f, look: Object.values(f.byBucket).flatMap((x) => [x.ornament, x.shader]).filter(Boolean)
                 .map((h) => ({ name: data.item(h)?.[I.name] ?? '?', icon: data.item(h)?.[I.icon] })) })),
-              myLoadouts: db.loadouts.map((l) => ({ ...l,
+              myLoadouts: db.loadouts.map((l) => ({ ...l, stats: extra.loadoutStats(l),
                 mods: [...(l.parameters?.mods ?? []), ...Object.values(l.parameters?.modsByBucket ?? {}).flat()]
                   .map((h) => ({ hash: h, name: data.item(h)?.[I.name] ?? '?', icon: data.item(h)?.[I.icon] })),
                 items: l.equipped.concat(l.unequipped).map((x) => {
@@ -358,6 +362,7 @@ export function createCore({ store, cache, auth = '', visible = () => true, bung
             return json(200, await previews.get(h).catch((e) => { previews.delete(h); throw e; }));
           }
         }
+        { const r = await extra.route('GET', pathname, q); if (r !== undefined) return json(200, r); }
         return json(404);
       }
       switch (pathname) {
@@ -404,6 +409,7 @@ export function createCore({ store, cache, auth = '', visible = () => true, bung
         case '/api/postmaster': return json(200, await busy('Hole Postmaster …', () => postmaster(b.charId)));
         case '/api/data/update': data.update(urls(), db.settings.lang, db.bungie.apiKey).then(sync); return json(200);
       }
+      { const r = await extra.route('POST', pathname, q, b); if (r !== undefined) return json(200, r); }
       return json(404);
     } catch (e) { return json(400, { error: e.message }); }
   }

@@ -5,7 +5,17 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { parseWishlist } from './data.mjs';
+import { optimize } from './extra.mjs';
 import { createCore } from './core.mjs';
+
+// ---- Rüstungs-Optimierer: höchstens ein Exotic, Mindestwert erreicht
+{
+  const mk = (id, b, tier, a, c) => ({ id, itemType: 2, bucket: b, cls: 0, tier, stats: [{ hash: 1, value: a }, { hash: 2, value: c }] });
+  const items = [3448274439, 3551918588, 14239492, 20886954, 1585787867].flatMap((b, n) => [mk('l' + n, b, 5, 10, 30), mk('h' + n, b, 5, 30, 5), mk('x' + n, b, 6, 40, 40)]);
+  const [best] = optimize(items, 0, { 1: 150 });
+  assert.equal(best.items.filter((i) => i.tier === 6).length, 1);
+  assert.equal(best.tot[1], 160); assert.equal(best.miss, 0);
+}
 
 // ---- Wishlist-Parser
 const wl = parseWishlist(`// Testwaffe - PvE god 1
@@ -220,6 +230,11 @@ try {
   const f2 = await json(await post('/api/fashion/apply', { id: 'f2', charId: 'c1' }));
   assert.equal(f2.ok, 0); assert.match(f2.errors[0], /nicht verfügbar/);
   assert.deepEqual((await json(await fetch(srv.url + 'api/state'))).fashion[0].look.map((x) => x.name), ['Gold']);
+
+  // Tags: zerlegen markieren und per tag: finden
+  assert.equal((await post('/api/tag', { id: 'A', tag: 'zerlegen' })).status, 200);
+  assert.deepEqual((await json(await fetch(srv.url + 'api/items?q=tag:zerlegen'))).map((i) => i.id), ['A']);
+  await post('/api/tag', { id: 'A' });
 
   // Godroll-Analyse: B hat Raserei, aber nicht Explosivladung -> knapp verfehlt; A passt (verbesserte Variante zählt)
   const exA = await json(await fetch(srv.url + 'api/godroll/item?id=A'));
