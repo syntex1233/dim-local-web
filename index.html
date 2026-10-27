@@ -307,7 +307,9 @@ const fmt=n=>n==null?'–':Number(n).toLocaleString('de-DE');
 const uid=()=>crypto.randomUUID();
 let S={chars:[],myLoadouts:[],fashion:[],shortcuts:[],hotkeys:[],settings:{},loadouts:{},bungie:{},data:{}},toastT;
 function toast(msg,bad){const t=$('#toast');t.innerHTML=msg;t.style.color=bad?'var(--bad)':'';t.style.display='block';clearTimeout(toastT);toastT=setTimeout(()=>t.style.display='none',bad?7000:3000);}
-const act=(u,b,ok)=>api(u,b).then(r=>{if(r?.errors?.length)toast(`${r.ok} erledigt, ${r.errors.length} Fehler:<br>${r.errors.slice(0,4).map(esc).join('<br>')}`,true);else if(ok)toast(ok);tick();loadItems();loadEquip();return r;}).catch(e=>{toast(esc(e.message),true);tick();});
+// Nach jeder Aktion frisch von Bungie laden (kurz verzögert und gebündelt, damit mehrere Klicks nur einen Abruf auslösen)
+let syncT;const resync=()=>{clearTimeout(syncT);syncT=setTimeout(()=>api('/api/sync').then(tick).catch(()=>{}),1500);};
+const act=(u,b,ok)=>api(u,b).finally(resync).then(r=>{if(r?.errors?.length)toast(`${r.ok} erledigt, ${r.errors.length} Fehler:<br>${r.errors.slice(0,4).map(esc).join('<br>')}`,true);else if(ok)toast(ok);tick();loadItems();loadEquip();return r;}).catch(e=>{toast(esc(e.message),true);tick();});
 const setDb=(key,value)=>api('/api/db',{key,value}).then(tick);
 const charName=id=>id==='vault'?'Tresor':(S.chars.find(c=>c.id===id)?.cls??'?');
 
@@ -506,7 +508,7 @@ async function applyTm(hash){const [it,s]=pickSocket();if(!s)return;
  const found=plan.filter(p=>p.h),miss=plan.filter(p=>!p.h);
  if(!confirm(`Ornament-Set „${nm(hash)[0]}“ übertragen:\n\n${found.map(p=>`✓ ${p.i.type}: ${nm(p.h)[0]}`).join('\n')}${miss.length?'\n\nNicht freigeschaltet / kein passendes Teil:\n'+miss.map(p=>`– ${p.i.type}`).join('\n'):''}`))return;
  const groups=new Map();for(const p of found)groups.set(p.h,[...(groups.get(p.h)??[]),{id:p.i.id,idx:p.x.idx}]);
- for(const [h,targets] of groups)await api('/api/transmog/apply',{hash:h,targets}).catch(e=>toast(esc(e.message),true));
+ for(const [h,targets] of groups)await api('/api/transmog/apply',{hash:h,targets}).catch(e=>toast(esc(e.message),true));resync();
  toast(`Ornament-Set auf ${found.length} Teile übertragen`);loadTm();tick();}
 
 // Transmog-Sets
