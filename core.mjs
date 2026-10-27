@@ -339,6 +339,10 @@ export function createCore({ store, cache, auth = '', visible = () => true, bung
             const r = data.raw ?? {}, list = (o) => Object.entries(o ?? {}).filter(([, v]) => v);
             return json(200, { names: list(r.loadoutNames), icons: list(r.loadoutIcons), colors: list(r.loadoutColors) });
           }
+          case '/api/godroll/item': { // Godroll-Analyse für eine Waffe aus dem Inventar
+            const it = find(q.get('id'));
+            return json(200, { hasRolls: !!data.raw?.rolls[it.hash], rolls: data.explain(String(it.hash), new Set(it.perks.flat().map((p) => p.name))) });
+          }
           case '/api/items': return json(200, live.inv ? filterItems(live.inv.items, q.get('q') ?? '').slice(0, +(q.get('limit') ?? 400)) : []);
           case '/api/godroll/search': return json(200, data.search(q.get('q') ?? ''));
           case '/api/godroll/weapon': {

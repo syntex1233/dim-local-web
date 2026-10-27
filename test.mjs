@@ -221,6 +221,13 @@ try {
   assert.equal(f2.ok, 0); assert.match(f2.errors[0], /nicht verfügbar/);
   assert.deepEqual((await json(await fetch(srv.url + 'api/state'))).fashion[0].look.map((x) => x.name), ['Gold']);
 
+  // Godroll-Analyse: B hat Raserei, aber nicht Explosivladung -> knapp verfehlt; A passt (verbesserte Variante zählt)
+  const exA = await json(await fetch(srv.url + 'api/godroll/item?id=A'));
+  assert.deepEqual(exA.rolls.map((r) => [r.title, r.have, r.missing]), [['Testwaffe - PvE god 1', ['Explosivladung', 'Raserei'], []]]);
+  const exB = await json(await fetch(srv.url + 'api/godroll/item?id=B'));
+  assert.deepEqual(exB.rolls.map((r) => [r.have, r.missing]), [[['Raserei'], ['Explosivladung']]]);
+  assert.equal(exB.hasRolls, true);
+
   // Spiel-Loadouts: Vorschau-Items, Speichern (Snapshot), Umbenennen, Löschen
   assert.deepEqual((await json(await fetch(srv.url + 'api/state'))).loadouts.c1[0].items.map((i) => i.id), ['A']);
   assert.deepEqual((await json(await fetch(srv.url + 'api/loadoutdefs'))).names, [['7', 'Raid']]);

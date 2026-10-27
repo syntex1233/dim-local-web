@@ -155,5 +155,20 @@ export function createData(cache) {
     return { god: [...god], trash: (data.trash[hash] ?? []).some(ok), pve: kinds.includes('pve'), pvp: kinds.includes('pvp') };
   }
 
-  return { ready, status, update, check, search, weapon, match, item, get raw() { return data; } };
+  // Godroll-Analyse je Waffe: pro Empfehlung (Wishlist-Block) die beste Kombination – was passt, was fehlt.
+  // Gezeigt werden passende und knapp verfehlte (max. 2 Perks fehlen, mind. 1 passt); Perkvergleich über Namen wie bei match()
+  function explain(hash, perkNames) {
+    if (!data) return [];
+    const best = new Map();
+    for (const [csv, li] of data.rolls[hash] ?? []) {
+      const ps = [...new Set(csv.split(',').filter(Boolean).map((p) => data.items[p]?.[I.name]).filter(Boolean))];
+      const have = ps.filter((n) => perkNames.has(n)), missing = ps.filter((n) => !perkNames.has(n));
+      const b = best.get(li);
+      if (!b || missing.length < b.missing.length || (missing.length === b.missing.length && have.length > b.have.length)) best.set(li, { li, have, missing });
+    }
+    return [...best.values()].filter((r) => r.missing.length <= 2 && r.have.length > 0).sort((a, b) => a.missing.length - b.missing.length || b.have.length - a.have.length)
+      .map(({ li, have, missing }) => { const [title, cols, note] = data.labels[li].split('\x1f'); return { title, cols, note, have, missing }; });
+  }
+
+  return { ready, status, update, check, search, weapon, match, explain, item, get raw() { return data; } };
 }
