@@ -231,7 +231,8 @@ body{height:100dvh}
 <section data-tab="settings">
 <h1>Einstellungen</h1>
 <h2>Bungie-Zugang</h2>
-<div class="card small" style="line-height:1.7;max-width:760px">
+<div class="card row" id="managed" style="display:none;max-width:640px"><span style="flex:1">Der Bungie-Zugang ist schon eingerichtet – einfach mit deinem Bungie-Konto anmelden.</span><button type="button" class="pri" onclick="$('#loginBtn').click()">Bei Bungie anmelden</button><button type="button" onclick="$('#logoutBtn').click()">Abmelden</button></div>
+<div class="card small selfsetup" style="line-height:1.7;max-width:760px">
 DIM Local spricht direkt von diesem Gerät mit Bungie. Dafür brauchst du einmalig eine eigene (kostenlose) Bungie-App:
 <ol style="margin:6px 0;padding-left:20px">
 <li><a href="https://www.bungie.net/de/Application" target="_blank" style="color:var(--acc)">bungie.net/de/Application</a> öffnen → <b>Create New App</b>.</li>
@@ -239,7 +240,7 @@ DIM Local spricht direkt von diesem Gerät mit Bungie. Dafür brauchst du einmal
 <li><b>Scope:</b> „Read your Destiny 2 information“ und „Move or equip Destiny gear“ anhaken. <b>Origin Header:</b> <code class="origin"></code></li>
 <li>Nach dem Speichern <b>API Key</b>, <b>OAuth client_id</b> und <b>OAuth client_secret</b> hier eintragen.</li>
 </ol></div>
-<form id="bgForm" class="card" style="display:grid;gap:10px;max-width:640px">
+<form id="bgForm" class="card selfsetup" style="display:grid;gap:10px;max-width:640px">
 <label>API Key<input name="apiKey" required autocomplete="off"></label>
 <label>OAuth client_id<input name="clientId" required autocomplete="off"></label>
 <label>OAuth client_secret<input name="clientSecret" type="password" autocomplete="off" placeholder="bleibt nur auf diesem Gerät"></label>
@@ -531,6 +532,7 @@ function render(){const s=S;
  $('#loList').innerHTML=s.chars.map(ch=>`<h2>${esc(ch.cls)} <span class="mut small">✦ ${ch.light}</span></h2><div class="grid">${(s.loadouts[ch.id]||[]).filter(l=>!l.empty).map(l=>
   `<div class="tile"><img src="${esc(img(l.icon))}" alt="" style="background:url('${esc(img(l.color))}') center/cover"><div class="t"><b>${esc(l.name)}</b><div class="row" style="margin-top:5px"><button class="sm pri" data-lo="${ch.id}" data-idx="${l.index}">Anlegen</button></div></div></div>`).join('')||'<span class="mut">Keine Loadouts gespeichert.</span>'}</div>`).join('')||'<span class="mut">Erst anmelden.</span>';
  $('#loginBtn').disabled=!s.configured;$('#logoutBtn').disabled=!s.loggedIn;
+ $('#managed').style.display=s.bungie.managed?'':'none';$$('.selfsetup').forEach(e=>e.style.display=s.bungie.managed?'none':'');
  const sig=JSON.stringify([s.shortcuts,s.hotkeys,s.hotkeyErrors,s.myLoadouts,s.chars,s.fashion]);
  if(sig!==lastSig){lastSig=sig;
   $('#fsList').innerHTML=fashionHtml(s);

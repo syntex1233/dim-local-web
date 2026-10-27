@@ -233,6 +233,20 @@ try {
   calls.length = 0;
   await srv.finishLogin('code123', state);
   assert.deepEqual(calls[0], ['login', 'code123']);
+
+  // Token-Tausch über den Worker: kein client_secret im Browser
+  const { createBungie } = await import('./bungie.mjs');
+  const sentT = [];
+  globalThis.fetch = async (u, o = {}) => {
+    sentT.push([String(u), o.body, o.headers?.authorization]);
+    return new Response(JSON.stringify(String(u).includes('/token')
+      ? { access_token: 'a', refresh_token: 'r', expires_in: 3600, refresh_expires_in: 7776000 }
+      : { ErrorCode: 1, Response: { primaryMembershipId: 'm', destinyMemberships: [{ membershipId: 'm', membershipType: 3, displayName: 'x' }] } }));
+  };
+  const authObj = {};
+  await createBungie(() => ({ apiKey: 'k', clientId: '1', tokenUrl: 'https://w/token' }), () => authObj, () => {}).login('cc');
+  assert.deepEqual(sentT[0], ['https://w/token', JSON.stringify({ grant_type: 'authorization_code', code: 'cc' }), undefined], 'an den Worker, ohne Basic-Auth');
+  assert.equal(authObj.access, 'a');
   console.log('OK – alle Checks bestanden');
 } finally {
   srv.close();

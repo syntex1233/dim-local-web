@@ -17,7 +17,8 @@ const DATA_CHECK_MS = 3 * 3600_000; // Spieldaten/Wishlist auf Neuigkeiten prüf
 const CAT = { armorMod: 4104513227, shader: 41, ornament: 56 }; // DestinyItemCategory-Hashes
 
 // store: {get(key), set(key, value)} (localStorage), cache: {load, save} (IndexedDB für die Spieldaten)
-export function createCore({ store, cache, visible = () => true, bungie: bungieOverride /* nur für Tests */ }) {
+// auth: Adresse des Cloudflare Workers (dim-auth), der API-Key/client_id liefert und das client_secret verwahrt
+export function createCore({ store, cache, auth = '', visible = () => true, bungie: bungieOverride /* nur für Tests */ }) {
   const db = store.get('db') ?? {};
   db.shortcuts ??= []; // {id,label,query,action}
   db.hotkeys ??= [];   // {id,accel,label,action}
@@ -106,7 +107,11 @@ export function createCore({ store, cache, visible = () => true, bungie: bungieO
     it.plugs[idx] = hash;
     return { ok: 1 };
   }
-  const bungie = bungieOverride ?? createBungie(() => ({ ...db.bungie, clientSecret: secret.clientSecret }), () => secret.auth, save);
+  const bungie = bungieOverride ?? createBungie(() => ({ ...db.bungie, clientSecret: secret.clientSecret, tokenUrl: auth && auth + '/token' }), () => secret.auth, save);
+  // Zugang vom Worker holen (und merken, damit die App auch kurz offline startet)
+  const authReady = !auth ? Promise.resolve() : fetch(auth + '/config').then((r) => r.json())
+    .then((c) => { if (c.apiKey && c.clientId) { db.bungie = { apiKey: c.apiKey, clientId: c.clientId }; save(); } })
+    .catch(() => {});
   const live = { inv: null, synced: null, error: null, busy: null, hotkeyErrors: [] };
   const urls = () => db.settings.wishlistUrls.split(/\s+/).filter(Boolean);
 
@@ -311,9 +316,9 @@ export function createCore({ store, cache, visible = () => true, bungie: bungieO
           case '/api/state': {
             const inv = live.inv;
             return json(200, {
-              configured: !!(db.bungie.apiKey && db.bungie.clientId && secret.clientSecret),
+              configured: !!(db.bungie.apiKey && db.bungie.clientId && (secret.clientSecret || auth)),
               loggedIn: !!secret.auth.access, user: secret.auth.name,
-              bungie: { apiKey: db.bungie.apiKey ?? '', clientId: db.bungie.clientId ?? '', hasSecret: !!secret.clientSecret },
+              bungie: { apiKey: db.bungie.apiKey ?? '', clientId: db.bungie.clientId ?? '', hasSecret: !!secret.clientSecret, managed: !!auth },
               data: data.status, settings: db.settings, shortcuts: db.shortcuts, hotkeys: db.hotkeys,
               fashion: db.fashion.map((f) => ({ ...f, look: Object.values(f.byBucket).flatMap((x) => [x.ornament, x.shader]).filter(Boolean)
                 .map((h) => ({ name: data.item(h)?.[I.name] ?? '?', icon: data.item(h)?.[I.icon] })) })),
@@ -397,7 +402,7 @@ export function createCore({ store, cache, visible = () => true, bungie: bungieO
   const timer = setInterval(() => { if (!live.busy && visible()) sync(); }, SYNC_MS);
   const checkData = () => urls().length && db.bungie.apiKey && data.check(urls(), db.settings.lang, db.bungie.apiKey).then((changed) => changed && sync());
   const dataTimer = setInterval(checkData, DATA_CHECK_MS);
-  const ready = data.ready.then(() => { sync(); checkData(); });
+  const ready = Promise.all([data.ready, authReady]).then(() => { sync(); checkData(); });
 
   return {
     ready, live, db, handle, finishLogin, sync,

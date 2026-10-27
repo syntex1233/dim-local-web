@@ -1,5 +1,6 @@
 // Start der Web-App: Speicher anbinden, App-Kern erzeugen, Rückkehr vom Bungie-Login verarbeiten.
 import { createCore } from './core.mjs';
+import { AUTH_URL } from './config.mjs';
 
 // Einstellungen, Loadouts, Tokens: localStorage (klein)
 const store = {
@@ -21,7 +22,7 @@ const tx = async (mode, fn) => {
 };
 const cache = { load: () => tx('readonly', (s) => s.get('gamedata')), save: (d) => tx('readwrite', (s) => s.put(d, 'gamedata')) };
 
-const core = createCore({ store, cache, visible: () => !document.hidden });
+const core = createCore({ store, cache, auth: AUTH_URL, visible: () => !document.hidden });
 
 // Zurück vom Bungie-Login: ?code=…&state=… aus der Adresse holen und einlösen
 const p = new URLSearchParams(location.search);

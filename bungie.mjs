@@ -8,10 +8,13 @@ export function authorizeUrl(clientId, state, lang = 'de') {
   return `${BUNGIE}/${lang}/OAuth/Authorize?client_id=${encodeURIComponent(clientId)}&response_type=code&state=${state}`;
 }
 
-// cfg: {apiKey, clientId, clientSecret}; auth: {access, accessExp, refresh, refreshExp, membershipType, membershipId}
+// cfg: {apiKey, clientId, clientSecret, tokenUrl?}; auth: {access, accessExp, refresh, refreshExp, membershipType, membershipId}
+// tokenUrl: Worker, der das client_secret verwahrt und den Token-Tausch erledigt (dann bleibt clientSecret leer)
 export function createBungie(cfg, auth, saveAuth) {
   async function token(body) {
-    const r = await fetch(`${BUNGIE}/Platform/App/OAuth/Token/`, {
+    const r = cfg().tokenUrl
+      ? await fetch(cfg().tokenUrl, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) })
+      : await fetch(`${BUNGIE}/Platform/App/OAuth/Token/`, {
       method: 'POST',
       headers: {
         'content-type': 'application/x-www-form-urlencoded',
