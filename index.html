@@ -89,6 +89,12 @@ table{width:100%;border-collapse:collapse}td,th{padding:8px 10px;border-bottom:1
 .tmopt{display:flex;flex-direction:column;align-items:center;gap:4px;padding:6px 4px;font-size:11px;line-height:1.2;background:transparent;border-color:transparent}
 .tmopt img{width:58px;height:58px;border-radius:6px;background:#0a0c10}.tmopt span{max-height:2.4em;overflow:hidden}
 .tmopt:hover{background:var(--card2);border-color:var(--line2)}.tmopt.cur{border-color:var(--acc);background:#2a2618}
+.lo{position:relative}.lopop{display:none;position:absolute;left:0;top:calc(100% + 4px);z-index:6;grid-template-columns:repeat(5,40px);gap:4px;padding:8px;background:var(--side);border:1px solid var(--line2);border-radius:8px;box-shadow:0 10px 24px #000a}
+.lo:hover .lopop{display:grid}.lopop.open{display:grid;position:static;grid-template-columns:repeat(auto-fill,44px);box-shadow:none}
+.lopop img{width:40px;height:40px;border-radius:5px;border:1px solid var(--line2);background:#000}.lopop.open img{width:44px;height:44px}.lopop img.exo{border-color:var(--ex)}
+.lonew{justify-content:center;color:var(--mut);border:1px dashed var(--line2);background:transparent;min-height:64px}
+.lopick{display:grid;grid-template-columns:repeat(auto-fill,48px);gap:6px}.lopick button{padding:2px;border-radius:8px;background:#0a0c10}.lopick img{width:40px;height:40px;border-radius:6px;display:block}
+.lopick button.sel{border-color:var(--acc);border-width:2px}
 .modrow{display:grid;grid-template-columns:minmax(220px,300px) 1fr;gap:18px;align-items:center;padding:12px 0;border-bottom:1px solid var(--line)}.modrow:first-child{padding-top:0}.modrow:last-child{border-bottom:0;padding-bottom:0}
 @media(max-width:900px){.tmgrid{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(340px,1fr);gap:22px;margin-top:16px;align-items:start}
 #tmPick{position:sticky;top:0;max-height:calc(100vh - 60px);display:flex;flex-direction:column}
@@ -105,6 +111,12 @@ table{width:100%;border-collapse:collapse}td,th{padding:8px 10px;border-bottom:1
 .tmopt{display:flex;flex-direction:column;align-items:center;gap:4px;padding:6px 4px;font-size:11px;line-height:1.2;background:transparent;border-color:transparent}
 .tmopt img{width:58px;height:58px;border-radius:6px;background:#0a0c10}.tmopt span{max-height:2.4em;overflow:hidden}
 .tmopt:hover{background:var(--card2);border-color:var(--line2)}.tmopt.cur{border-color:var(--acc);background:#2a2618}
+.lo{position:relative}.lopop{display:none;position:absolute;left:0;top:calc(100% + 4px);z-index:6;grid-template-columns:repeat(5,40px);gap:4px;padding:8px;background:var(--side);border:1px solid var(--line2);border-radius:8px;box-shadow:0 10px 24px #000a}
+.lo:hover .lopop{display:grid}.lopop.open{display:grid;position:static;grid-template-columns:repeat(auto-fill,44px);box-shadow:none}
+.lopop img{width:40px;height:40px;border-radius:5px;border:1px solid var(--line2);background:#000}.lopop.open img{width:44px;height:44px}.lopop img.exo{border-color:var(--ex)}
+.lonew{justify-content:center;color:var(--mut);border:1px dashed var(--line2);background:transparent;min-height:64px}
+.lopick{display:grid;grid-template-columns:repeat(auto-fill,48px);gap:6px}.lopick button{padding:2px;border-radius:8px;background:#0a0c10}.lopick img{width:40px;height:40px;border-radius:6px;display:block}
+.lopick button.sel{border-color:var(--acc);border-width:2px}
 .modrow{grid-template-columns:1fr}}
 .subgrid{display:flex;flex-wrap:wrap;gap:18px 34px;margin-top:16px}.subsec h4{margin:0 0 10px;font-size:11px;font-weight:700;color:var(--mut);text-transform:uppercase;letter-spacing:1px}
 .slots{display:flex;flex-wrap:wrap;gap:12px}
@@ -140,7 +152,13 @@ body{height:100dvh}
  #drawer{width:100%;padding:calc(16px + env(safe-area-inset-top)) 16px 28px}
  .tmrow{grid-template-columns:1fr 1fr}.tmrow>.tile{grid-column:1/-1}
  .slot{width:74px}.slot img{width:48px;height:48px}.slot.big img{width:60px;height:60px}
- .modrow{grid-template-columns:1fr}
+ .lo{position:relative}.lopop{display:none;position:absolute;left:0;top:calc(100% + 4px);z-index:6;grid-template-columns:repeat(5,40px);gap:4px;padding:8px;background:var(--side);border:1px solid var(--line2);border-radius:8px;box-shadow:0 10px 24px #000a}
+.lo:hover .lopop{display:grid}.lopop.open{display:grid;position:static;grid-template-columns:repeat(auto-fill,44px);box-shadow:none}
+.lopop img{width:40px;height:40px;border-radius:5px;border:1px solid var(--line2);background:#000}.lopop.open img{width:44px;height:44px}.lopop img.exo{border-color:var(--ex)}
+.lonew{justify-content:center;color:var(--mut);border:1px dashed var(--line2);background:transparent;min-height:64px}
+.lopick{display:grid;grid-template-columns:repeat(auto-fill,48px);gap:6px}.lopick button{padding:2px;border-radius:8px;background:#0a0c10}.lopick img{width:40px;height:40px;border-radius:6px;display:block}
+.lopick button.sel{border-color:var(--acc);border-width:2px}
+.modrow{grid-template-columns:1fr}
  .eqwrap,.fsets{grid-template-columns:1fr}
  table{font-size:12px}
 }
@@ -296,10 +314,14 @@ document.addEventListener('click',e=>{const b=e.target.closest('button,[data-ite
  if(d.run)act('/api/run',JSON.parse(d.run),'Erledigt');
  if(d.q){$('#q').value=d.q;location.hash='#inv';loadItems();}
  if(d.sc){const s=S.shortcuts.find(x=>x.id===d.sc);s&&runShortcut(s);}
- if(d.bulk){const q=$('#q').value.trim();if(!q)return toast('Erst eine Suche eingeben.',true);
-  if(confirm(`Alle ${lastItems.filter(i=>!i.equipped).length} Treffer für „${q}“: ${scLabel[d.bulk]}?`))act('/api/bulk',{query:fullQuery(),action:d.bulk},'Massenaktion fertig');}
+ if(d.bulk){const q=fullQuery().replace('-slot:subklasse','').trim();if(!q)return toast('Erst filtern – Suche, Charakter, Godroll-Reiter oder Auswahlfelder.',true);
+  if(confirm(`${lastItems.filter(i=>!i.equipped).length} Items (${q}): ${scLabel[d.bulk]}?`))act('/api/bulk',{query:fullQuery(),action:d.bulk},'Massenaktion fertig');}
  if(d.pm)act('/api/postmaster',{charId:d.pm},'Postmaster geleert');
  if(d.lo)act('/api/loadout',{charId:d.lo,index:+d.idx},'Loadout angelegt');
+ if(d.loe)openLoEdit(...d.loe.split(':'));
+ if(d.los)saveLo(d.los==='snap');
+ if(d.loc&&confirm('Dieses Spiel-Loadout im Spiel löschen?'))act('/api/gameloadout/clear',{charId:LE.cid,index:LE.index},'Spiel-Loadout gelöscht').then(()=>$('#drawer').classList.remove('open'));
+ if(d.lpi)pickLo('iconHash',d.lpi);if(d.lpc)pickLo('colorHash',d.lpc);
  if(d.item)openItem(d.item);
  if(d.mv)act('/api/move',{id:d.mv,target:d.to,equip:d.eq==='1'},'Erledigt').then(()=>openItem(d.mv));
  if(d.lk)act('/api/lock',{id:d.lk,state:d.state==='1'}).then(()=>openItem(d.lk));
@@ -471,6 +493,25 @@ function fashionHtml(s){return s.fashion.map(f=>`<div class="card fset" style="m
  <div class="look">${f.look.map(x=>`<img src="${esc(img(x.icon))}" alt="${esc(x.name)}" title="${esc(x.name)}">`).join('')}</div>
  <div class="row">${s.chars.filter(c=>c.classType===f.classType).map(c=>`<button class="sm pri" data-fsa="${esc(f.id)}" data-to="${c.id}">Auf ${esc(c.cls)} anwenden</button>`).join('')}<button class="sm" data-del="fashion:${esc(f.id)}" aria-label="Löschen">✕</button></div></div>`).join('')||'<span class="mut">Noch keine Sets. Stell links einen Look zusammen und speichere ihn.</span>';}
 
+// ---- Spiel-Loadouts bearbeiten (wie DIM): Name, Symbol, Farbe; aktuelle Ausrüstung speichern; löschen
+let LDEFS=null,LE=null;
+async function openLoEdit(cid,index,isNew){LDEFS??=await get('/api/loadoutdefs');
+ const l=(S.loadouts[cid]||[]).find(x=>x.index===+index)||{};
+ LE={cid,index:+index,isNew:!!isNew,nameHash:l.nameHash||+LDEFS.names[0]?.[0],iconHash:l.iconHash||+LDEFS.icons[0]?.[0],colorHash:l.colorHash||+LDEFS.colors[0]?.[0]};
+ drawLo();$('#drawer').classList.add('open');}
+function pickLo(k,v){LE[k]=+v;drawLo();}
+function drawLo(){const l=(S.loadouts[LE.cid]||[]).find(x=>x.index===LE.index)||{},I=Object.fromEntries(LDEFS.icons),C=Object.fromEntries(LDEFS.colors);
+ $('#drawer').innerHTML=`<div class="row" style="gap:12px"><img src="${esc(img(I[LE.iconHash]))}" width="56" height="56" alt="" style="border-radius:8px;background:url('${esc(img(C[LE.colorHash]))}') center/cover">
+  <div style="flex:1"><h1 style="font-size:19px">${LE.isNew?'Neues Spiel-Loadout':'Spiel-Loadout bearbeiten'}</h1><span class="mut">${esc(charName(LE.cid))} · Platz ${LE.index+1}</span></div><button class="sm" data-close aria-label="Schließen">✕</button></div>
+  ${LE.isNew?'<p class="mut small">Gespeichert wird die Ausrüstung, die der Charakter gerade trägt (inkl. Subklasse und Mods).</p>':`<h2>Inhalt</h2><div class="lopop open">${(l.items||[]).map(i=>`<img class="${i.tier===6?'exo':''}" src="${esc(img(i.icon))}" alt="" title="${esc(i.name)}">`).join('')}</div>`}
+  <h2>Name</h2><select id="loName" style="width:100%">${LDEFS.names.map(([h,n])=>`<option value="${h}" ${+h===LE.nameHash?'selected':''}>${esc(n)}</option>`).join('')}</select>
+  <h2>Symbol</h2><div class="lopick">${LDEFS.icons.map(([h,p])=>`<button class="${+h===LE.iconHash?'sel':''}" data-lpi="${h}"><img src="${esc(img(p))}" alt="" loading="lazy" style="background:url('${esc(img(C[LE.colorHash]))}') center/cover"></button>`).join('')}</div>
+  <h2>Farbe</h2><div class="lopick">${LDEFS.colors.map(([h,p])=>`<button class="${+h===LE.colorHash?'sel':''}" data-lpc="${h}"><img src="${esc(img(p))}" alt="" loading="lazy"></button>`).join('')}</div>
+  <div class="row" style="margin-top:18px">${LE.isNew?'<button class="pri" data-los="snap">Aktuelle Ausrüstung speichern</button>':'<button class="pri" data-los="ids">Speichern</button><button data-los="snap" title="Ersetzt den Inhalt durch die gerade angelegte Ausrüstung">Mit aktueller Ausrüstung überschreiben</button><button data-loc="1" style="border-color:#c43b35">Löschen</button>'}</div>`;
+ $('#loName').onchange=e=>{LE.nameHash=+e.target.value;};}
+function saveLo(snap){if(snap&&!LE.isNew&&!confirm('Inhalt durch die aktuell angelegte Ausrüstung ersetzen?'))return;
+ act('/api/gameloadout/save',{charId:LE.cid,index:LE.index,nameHash:LE.nameHash,iconHash:LE.iconHash,colorHash:LE.colorHash,snapshot:snap},snap?'Spiel-Loadout gespeichert':'Spiel-Loadout geändert').then(r=>r&&$('#drawer').classList.remove('open'));}
+
 // ---- Eigene Loadouts
 const CLS=['Titan','Jäger','Warlock'];
 $('#loImport').onsubmit=e=>{e.preventDefault();act('/api/myloadout/import',{link:e.target.link.value},'Loadout importiert').then(r=>r&&e.target.reset());};
@@ -529,8 +570,12 @@ function render(){const s=S;
  $('#stats').innerHTML=s.counts?stat('Tresor',s.vaultCount,s.limits.vault||null,s.limits.vault&&s.vaultCount>=s.limits.vault-10)+s.currencies.map(c=>stat(c.name,c.amount,c.max&&c.max<999999?c.max:null,c.max&&c.amount>=c.max)).join('')
   +stat('Godrolls im Besitz',s.counts.god)+stat('Trash-Rolls',s.counts.trash):'<span class="mut">Noch keine Daten.</span>';
  $('#grStatus').innerHTML=(s.data.state==='bereit'?`${s.data.weapons} Waffen, Stand ${new Date(s.data.updated).toLocaleString('de-DE')}`:s.data.state==='lädt'?'lädt Wishlist und Manifest …':'noch nicht geladen')+(s.data.error?` <span class="err">Fehler: ${esc(s.data.error)}</span>`:'');
- $('#loList').innerHTML=s.chars.map(ch=>`<h2>${esc(ch.cls)} <span class="mut small">✦ ${ch.light}</span></h2><div class="grid">${(s.loadouts[ch.id]||[]).filter(l=>!l.empty).map(l=>
-  `<div class="tile"><img src="${esc(img(l.icon))}" alt="" style="background:url('${esc(img(l.color))}') center/cover"><div class="t"><b>${esc(l.name)}</b><div class="row" style="margin-top:5px"><button class="sm pri" data-lo="${ch.id}" data-idx="${l.index}">Anlegen</button></div></div></div>`).join('')||'<span class="mut">Keine Loadouts gespeichert.</span>'}</div>`).join('')||'<span class="mut">Erst anmelden.</span>';
+ const lh=s.chars.map(ch=>{const los=s.loadouts[ch.id]||[],free=los.find(l=>l.empty);
+  return `<h2>${esc(ch.cls)} <span class="mut small">✦ ${ch.light}</span></h2><div class="grid">${los.filter(l=>!l.empty).map(l=>
+  `<div class="tile lo"><img src="${esc(img(l.icon))}" alt="" style="background:url('${esc(img(l.color))}') center/cover"><div class="t"><b>${esc(l.name)}</b><div class="row" style="margin-top:5px"><button class="sm pri" data-lo="${ch.id}" data-idx="${l.index}">Anlegen</button><button class="sm" data-loe="${ch.id}:${l.index}">Bearbeiten</button></div></div>
+   <div class="lopop" aria-hidden="true">${l.items.map(i=>`<img class="${i.tier===6?'exo':''}" src="${esc(img(i.icon))}" alt="" title="${esc(i.name)}">`).join('')||'<span class="mut small">Keine Items gefunden.</span>'}</div></div>`).join('')}
+  ${free?`<button class="tile lonew" data-loe="${ch.id}:${free.index}:new">＋ Aktuelle Ausrüstung als neues Spiel-Loadout</button>`:''}</div>`;}).join('')||'<span class="mut">Erst anmelden.</span>';
+ if($('#loList').dataset.h!==lh){$('#loList').dataset.h=lh;$('#loList').innerHTML=lh;}
  $('#loginBtn').disabled=!s.configured;$('#logoutBtn').disabled=!s.loggedIn;
  $('#managed').style.display=s.bungie.managed?'':'none';$$('.selfsetup').forEach(e=>e.style.display=s.bungie.managed?'none':'');
  const sig=JSON.stringify([s.shortcuts,s.hotkeys,s.hotkeyErrors,s.myLoadouts,s.chars,s.fashion]);

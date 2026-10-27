@@ -335,6 +335,10 @@ export function createCore({ store, cache, auth = '', visible = () => true, bung
               counts: inv && { god: inv.items.filter((i) => i.god.length).length, trash: inv.items.filter((i) => i.trash).length, items: inv.items.length },
             });
           }
+          case '/api/loadoutdefs': { // Namen, Symbole, Farben für Spiel-Loadouts (aus dem Manifest)
+            const r = data.raw ?? {}, list = (o) => Object.entries(o ?? {}).filter(([, v]) => v);
+            return json(200, { names: list(r.loadoutNames), icons: list(r.loadoutIcons), colors: list(r.loadoutColors) });
+          }
           case '/api/items': return json(200, live.inv ? filterItems(live.inv.items, q.get('q') ?? '').slice(0, +(q.get('limit') ?? 400)) : []);
           case '/api/godroll/search': return json(200, data.search(q.get('q') ?? ''));
           case '/api/godroll/weapon': {
@@ -372,6 +376,15 @@ export function createCore({ store, cache, auth = '', visible = () => true, bung
         case '/api/lock': return json(200, await busy('Sperre …', () => lock(find(b.id), b.state)));
         case '/api/bulk': return json(200, await busy('Massenaktion …', () => bulk(b.query, b.action, b.charId)));
         case '/api/run': return json(200, await busy('Aktion …', () => run(b)));
+        case '/api/gameloadout/save': return json(200, await busy('Speichere Spiel-Loadout …', async () => {
+          const ids = { nameHash: +b.nameHash, iconHash: +b.iconHash, colorHash: +b.colorHash };
+          await (b.snapshot ? bungie.snapshotLoadout(b.charId, +b.index, ids) : bungie.updateLoadout(b.charId, +b.index, ids));
+          await sync();
+        }));
+        case '/api/gameloadout/clear': return json(200, await busy('Lösche Spiel-Loadout …', async () => {
+          await bungie.clearLoadout(b.charId, +b.index);
+          await sync();
+        }));
         case '/api/loadout': return json(200, await busy('Lege Loadout an …', () => bungie.equipLoadout(b.charId, b.index).then(sync)));
         case '/api/myloadout/import': return json(200, await importDim(b.link));
         case '/api/myloadout/save': return json(200, await saveCurrent(b.charId, b.name));

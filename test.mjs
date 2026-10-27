@@ -221,6 +221,19 @@ try {
   assert.equal(f2.ok, 0); assert.match(f2.errors[0], /nicht verfügbar/);
   assert.deepEqual((await json(await fetch(srv.url + 'api/state'))).fashion[0].look.map((x) => x.name), ['Gold']);
 
+  // Spiel-Loadouts: Vorschau-Items, Speichern (Snapshot), Umbenennen, Löschen
+  assert.deepEqual((await json(await fetch(srv.url + 'api/state'))).loadouts.c1[0].items.map((i) => i.id), ['A']);
+  assert.deepEqual((await json(await fetch(srv.url + 'api/loadoutdefs'))).names, [['7', 'Raid']]);
+  calls.length = 0;
+  await json(await post('/api/gameloadout/save', { charId: 'c1', index: 1, nameHash: 7, iconHash: 1, colorHash: 2, snapshot: true }));
+  await json(await post('/api/gameloadout/save', { charId: 'c1', index: 0, nameHash: 7, iconHash: 3, colorHash: 4 }));
+  await json(await post('/api/gameloadout/clear', { charId: 'c1', index: 0 }));
+  assert.deepEqual(calls.filter((c) => c[0] !== 'profile'), [
+    ['snapshotLoadout', 'c1', 1, { nameHash: 7, iconHash: 1, colorHash: 2 }],
+    ['updateLoadout', 'c1', 0, { nameHash: 7, iconHash: 3, colorHash: 4 }],
+    ['clearLoadout', 'c1', 0],
+  ]);
+
   // Konfiguration + Schutz
   await json(await post('/api/db', { key: 'hotkeys', value: [{ id: 'h1', accel: 'Ctrl+Alt+1', label: 'x', action: { type: 'sync' } }] }));
   assert.equal(mem.db.hotkeys[0].accel, 'Ctrl+Alt+1');

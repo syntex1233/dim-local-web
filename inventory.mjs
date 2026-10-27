@@ -104,11 +104,14 @@ export function buildInventory(profile, data) {
   }));
 
   const raw = data.raw ?? {};
+  const byId = new Map(items.map((i) => [i.id, i]));
   const loadouts = Object.fromEntries(charIds.map((cid) => [cid,
     (profile.characterLoadouts?.data?.[cid]?.loadouts ?? []).map((l, index) => ({
       index, name: raw.loadoutNames?.[l.nameHash] ?? `Loadout ${index + 1}`,
       icon: raw.loadoutIcons?.[l.iconHash], color: raw.loadoutColors?.[l.colorHash],
       empty: l.items.every((x) => x.itemInstanceId === '0'),
+      nameHash: l.nameHash, iconHash: l.iconHash, colorHash: l.colorHash,
+      items: l.items.map((x) => byId.get(x.itemInstanceId)).filter(Boolean).map((i) => ({ id: i.id, name: i.name, icon: i.icon, tier: i.tier, type: i.type })),
     }))]));
 
   const limits = { vault: 0, postmaster: 21, ...data.raw?.limits }; // ponytail: 21 nur bis die Spieldaten neu geladen sind

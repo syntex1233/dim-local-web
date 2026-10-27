@@ -82,5 +82,9 @@ export function createBungie(cfg, auth, saveAuth) {
     equip: (item, characterId) => api('/Destiny2/Actions/Items/EquipItem/', { itemId: item.id, characterId, membershipType: mt() }),
     lock: (item, characterId, state) => api('/Destiny2/Actions/Items/SetLockState/', { state, itemId: item.id, characterId, membershipType: mt() }),
     equipLoadout: (characterId, loadoutIndex) => api('/Destiny2/Actions/Loadouts/EquipLoadout/', { loadoutIndex, characterId, membershipType: mt() }),
+    // ids: {nameHash, iconHash, colorHash}; Snapshot speichert die aktuell angelegte Ausrüstung in den Platz
+    snapshotLoadout: (characterId, loadoutIndex, ids) => api('/Destiny2/Actions/Loadouts/SnapshotLoadout/', { ...ids, loadoutIndex, characterId, membershipType: mt() }),
+    updateLoadout: (characterId, loadoutIndex, ids) => api('/Destiny2/Actions/Loadouts/UpdateLoadoutIdentifiers/', { ...ids, loadoutIndex, characterId, membershipType: mt() }),
+    clearLoadout: (characterId, loadoutIndex) => api('/Destiny2/Actions/Loadouts/ClearLoadout/', { loadoutIndex, characterId, membershipType: mt() }),
   };
 }
