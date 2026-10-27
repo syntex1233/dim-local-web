@@ -7,7 +7,7 @@ export const ARTIFACT_BUCKET = 1506418338;
 // Waffen (3), Rüstung (2) sowie Embleme (14), Subklassen (16), Schiffe (21), Sparrows (22), Ghosts (24)
 export const GEAR = [2, 3, 14, 16, 21, 22, 24];
 // Werte wie im Spiel, ohne Power/Angriff/Verteidigung; Name, Icon und Reihenfolge aus DestinyStatDefinition
-const NO_STAT = new Set([1935656794, 1480404414, 3897883278]);
+const NO_STAT = new Set([1935470627, 3289069874, 1480404414, 3897883278]);
 const statList = (data, entries) => entries.filter(([h]) => !NO_STAT.has(+h) && data.raw?.stats?.[h]?.[0])
   .map(([h, value]) => { const [name, icon, index] = data.raw.stats[h]; return { hash: +h, name, icon, value, index }; }).sort((a, b) => a.index - b.index);
 export const CLASSES = ['Titan', 'Jäger', 'Warlock'];
