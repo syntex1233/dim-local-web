@@ -6,6 +6,10 @@ const POSTMASTER = 215593132, VAULT_BUCKET = 138197802;
 export const ARTIFACT_BUCKET = 1506418338;
 // Waffen (3), Rüstung (2) sowie Embleme (14), Subklassen (16), Schiffe (21), Sparrows (22), Ghosts (24)
 export const GEAR = [2, 3, 14, 16, 21, 22, 24];
+// Werte wie im Spiel, ohne Power/Angriff/Verteidigung; Name, Icon und Reihenfolge aus DestinyStatDefinition
+const NO_STAT = new Set([1935656794, 1480404414, 3897883278]);
+const statList = (data, entries) => entries.filter(([h]) => !NO_STAT.has(+h) && data.raw?.stats?.[h]?.[0])
+  .map(([h, value]) => { const [name, icon, index] = data.raw.stats[h]; return { hash: +h, name, icon, value, index }; }).sort((a, b) => a.index - b.index);
 export const CLASSES = ['Titan', 'Jäger', 'Warlock'];
 
 export function buildInventory(profile, data) {
@@ -27,6 +31,7 @@ export function buildInventory(profile, data) {
       power: instances[id]?.primaryStat?.value ?? 0,
       locked: !!(raw.state & 1), crafted: !!(raw.state & 8), lockable: !!raw.lockable,
       plugs: sockets[id]?.sockets.map((s) => s.plugHash ?? 0) ?? [], // eingesetzte Plugs je Sockel (Mods, Subklassen-Setup)
+      stats: statList(data, Object.values(C.stats?.data?.[id]?.stats ?? {}).map((s) => [s.statHash, s.value])),
       perks: [], god: [], trash: false, pve: false, pvp: false,
     };
     if (itemType === 3 && sockets[id]) {
@@ -91,7 +96,7 @@ export function buildInventory(profile, data) {
   const chars = charIds.map((id) => {
     const c = profile.characters.data[id];
     return {
-      artifact: artifact(id),
+      artifact: artifact(id), stats: statList(data, Object.entries(c.stats ?? {})),
       id, cls: CLASSES[c.classType] ?? '?', classType: c.classType, light: c.light, emblem: c.emblemPath, bg: c.emblemBackgroundPath, last: c.dateLastPlayed,
       postmaster: (profile.characterInventories?.data?.[id]?.items ?? []).filter((r) => r.bucketHash === POSTMASTER).length,
     };

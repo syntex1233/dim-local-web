@@ -2,7 +2,7 @@
 // Doku: https://bungie-net.github.io/multi/index.html
 import { BUNGIE } from './data.mjs';
 
-const COMPONENTS = [100, 102, 103, 104, 200, 201, 202, 205, 206, 300, 305, 310].join(',');
+const COMPONENTS = [100, 102, 103, 104, 200, 201, 202, 205, 206, 300, 304, 305, 310].join(',');
 
 export function authorizeUrl(clientId, state, lang = 'de') {
   return `${BUNGIE}/${lang}/OAuth/Authorize?client_id=${encodeURIComponent(clientId)}&response_type=code&state=${state}`;

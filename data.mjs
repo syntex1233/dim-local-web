@@ -77,6 +77,7 @@ export function createData(cache) {
       const d = {
         updated: new Date().toISOString(), version: manifest.version, lang, items, perkTypes, rolls, trash, labels, stacks,
         limits: { vault: buckets[138197802]?.itemCount, postmaster: buckets[215593132]?.itemCount }, // Plätze laut aktuellem Manifest
+        stats: await named('DestinyStatDefinition', (d) => [d.displayProperties?.name ?? '', d.displayProperties?.icon ?? '', d.index ?? 0]),
         loadoutNames: await named('DestinyLoadoutNameDefinition', (d) => d.name),
         loadoutIcons: await named('DestinyLoadoutIconDefinition', (d) => d.iconImagePath),
         loadoutColors: await named('DestinyLoadoutColorDefinition', (d) => d.colorImagePath),
@@ -91,7 +92,7 @@ export function createData(cache) {
   // Automatisch neu laden: neues Bungie-Manifest (Patch/Saison), Wishlist älter als 24 h, andere Sprache oder alter Cache
   async function check(urls, lang, apiKey) {
     try {
-      const fresh = data?.limits && data.lang === lang && Date.now() - Date.parse(data.updated) < 24 * 3600_000;
+      const fresh = data?.stats && data.lang === lang && Date.now() - Date.parse(data.updated) < 24 * 3600_000;
       if (fresh && (await get(`${BUNGIE}/Platform/Destiny2/Manifest/`, 'json', { 'x-api-key': apiKey })).Response.version === data.version) return false;
       await update(urls, lang, apiKey);
       return status.state === 'bereit' && !status.error;
