@@ -59,6 +59,7 @@ label{display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--mut)
 .char{position:relative;border-radius:var(--r);padding:16px;background:var(--card) left center/cover;min-height:104px;display:flex;flex-direction:column;justify-content:space-between;text-shadow:0 1px 3px #000;cursor:pointer;border:2px solid var(--line);transition:border-color .12s,transform .1s}
 .char:hover{border-color:var(--line2);transform:translateY(-1px)}.char.sel{border-color:var(--acc)}
 .char b{font-size:20px}
+.carry{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:10px}.carry .items{grid-template-columns:repeat(3,1fr);max-width:240px}
 .eqwrap{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:14px}
 .pv img{width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:8px;margin-top:12px;background:#000;display:block}.pv i{display:block;margin-top:8px;color:var(--mut);font-size:13px}
 .eq{display:grid;gap:5px;align-content:start}.eq .tile{padding:6px 9px}.eq .tile img{width:42px;height:42px}
@@ -187,6 +188,7 @@ body{height:100dvh}
 <div id="setup"></div>
 <div class="chars" id="chars"></div>
 <h2 id="eqTitle">Aktuelle Ausrüstung</h2><div class="eqwrap" id="equip"></div>
+<h2 id="carryTitle">Dabei</h2><div class="carry" id="carry"></div>
 <h2 id="subTitle">Subklasse</h2><div id="subclass"></div>
 <h2 id="modTitle">Mods</h2><div id="mods"></div>
 <h2 id="artTitle">Artefakt</h2><div id="artifact"></div>
@@ -384,8 +386,12 @@ async function loadItems(){if(location.hash!=='#inv')return;
 const SLOTS=[1498876634,2465295065,953998645,3448274439,3551918588,14239492,20886954,1585787867];
 let eqItems=[],eqChar=null;
 $('#chars').onclick=e=>{const c=e.target.closest('[data-eqc]');if(c&&!e.target.closest('button')){eqChar=c.dataset.eqc;render();}};
-let pmItems=[];
-async function loadEquip(){[eqItems,pmItems]=await Promise.all([get('/api/items?limit=200&q=is:equipped'),get('/api/items?limit=500&q=is:postmaster')]);render();}
+let pmItems=[],carryItems=[];
+async function loadEquip(){[eqItems,pmItems,carryItems]=await Promise.all([get('/api/items?limit=200&q=is:equipped'),get('/api/items?limit=500&q=is:postmaster'),get('/api/items?limit=2000&q=-is:vault -is:equipped -is:postmaster')]);render();}
+// Was der Charakter dabei hat (nicht angelegt), je Slot wie im Spiel – 9 Plätze neben dem angelegten Item
+const itTile=i=>`<div class="it ${i.tier===6?'exo':''}" data-item="${esc(i.id??'')}" title="${esc(i.name)} · ${esc(i.type)}"><img src="${esc(img(i.icon))}" alt="${esc(i.name)}" loading="lazy">${i.amount>1?`<span class="pw">${i.amount}</span>`:i.power?`<span class="pw">${i.power}</span>`:''}</div>`;
+function carryHtml(){const mine=carryItems.filter(i=>i.owner===eqChar);
+ return BUCKETS.map(([b,n])=>[b,n,mine.filter(i=>i.bucket===b)]).filter(([b,,l])=>l.length||SLOTS.includes(b)).map(([b,n,l])=>`<div class="card"><div class="row" style="justify-content:space-between"><b>${n}</b><span class="mut small ${l.length>=9?'err':''}">${l.length}/9</span></div><div class="items" style="margin-top:8px">${l.map(itTile).join('')||'<span class="mut small">leer</span>'}</div></div>`).join('');}
 function equipHtml(){const ch=S.chars.find(c=>c.id===eqChar)??S.chars[0];if(!ch)return '';eqChar=ch.id;
  const mine=eqItems.filter(i=>i.owner===ch.id).sort((a,b)=>bIdx(a)-bIdx(b));
  const tile=i=>`<div class="tile click ${i.tier===6?'exo':''}" data-item="${esc(i.id)}"><img src="${esc(img(i.icon))}" alt=""><div class="t"><b>${esc(i.name)}</b><span class="mut small">${esc(i.type)}${i.power&&i.itemType!==16?' · '+i.power:''}</span></div>${i.god.length?'<span class="bdg">GOD</span>':''}${i.trash?'<span class="bdg trash">TRASH</span>':''}</div>`;
@@ -569,7 +575,9 @@ function render(){const s=S;
  $('#setup').innerHTML=!s.configured?`<div class="card">Einmalige Einrichtung: unter <a href="#settings" style="color:var(--acc)">Einstellungen</a> eine Bungie-App eintragen, dann anmelden.</div>`
   :!s.loggedIn?`<div class="card row"><span style="flex:1">Melde dich bei Bungie an, damit DIM Local dein Inventar laden kann.</span><button class="pri" onclick="$('#loginBtn').click()">Bei Bungie anmelden</button></div>`:'';
  const eh=equipHtml();if($('#equip').dataset.h!==eh){$('#equip').dataset.h=eh;$('#equip').innerHTML=eh;}
- const pm=pmItems.filter(i=>i.owner===eqChar),ph=`<div class="items" style="max-width:820px">${pm.map(i=>`<div class="it ${i.tier===6?'exo':''}" data-item="${esc(i.id??'')}" title="${esc(i.name)} · ${esc(i.type)}"><img src="${esc(img(i.icon))}" alt="${esc(i.name)}" loading="lazy">${i.amount>1?`<span class="pw">${i.amount}</span>`:i.power?`<span class="pw">${i.power}</span>`:''}</div>`).join('')||'<span class="mut">Leer.</span>'}</div>${pm.length?`<button class="sm" data-pm="${eqChar}" style="margin-top:8px">Alles abholen</button>`:''}`;
+ const ch_=carryHtml();if($('#carry').dataset.h!==ch_){$('#carry').dataset.h=ch_;$('#carry').innerHTML=ch_;}
+ $('#carryTitle').textContent='Dabei'+(eqChar?' – '+charName(eqChar):'');
+ const pm=pmItems.filter(i=>i.owner===eqChar),ph=`<div class="items" style="max-width:820px">${pm.map(itTile).join('')||'<span class="mut">Leer.</span>'}</div>${pm.length?`<button class="sm" data-pm="${eqChar}" style="margin-top:8px">Alles abholen</button>`:''}`;
  if($('#pmList').dataset.h!==ph){$('#pmList').dataset.h=ph;$('#pmList').innerHTML=ph;}
  const ch=S.chars.find(c=>c.id===eqChar),a=ch?.artifact,sc=eqItems.find(i=>i.owner===eqChar&&i.itemType===16);
  if(sc?.setup&&sc.setup.some(p=>!(p.hash in descs)))needDescs(sc.setup).then(render);
