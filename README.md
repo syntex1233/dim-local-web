@@ -19,7 +19,15 @@ Die App braucht eine HTTPS-Adresse, damit Bungie nach dem Login dorthin zurückl
 - **Netlify Drop:** Den Ordner auf https://app.netlify.com/drop ziehen.
 - **Cloudflare Pages:** Funktioniert genauso.
 
-## 2. Bungie-App einrichten (einmalig)
+## Bungie-Zugang über den Cloudflare Worker (eingerichtet)
+
+Die Bungie-Zugangsdaten (API Key, client_id und client_secret) liegen als Secrets im Cloudflare Worker `dim-local-auth`. Der Code dazu steht im Ordner `../dim-auth`. Die App holt dort nur API Key und client_id, die ohnehin öffentlich sind, und lässt den Login-Tausch erledigen. Im Browser und hier im Repository steht kein Secret. Wer die Seite öffnet, meldet sich einfach mit seinem eigenen Bungie-Konto an.
+
+Die Adresse des Workers steht in `config.mjs`. Ist sie leer, verlangt die App die drei Werte wie unten beschrieben unter Setup.
+
+Werte ändern (im Ordner `dim-auth`): `npx.cmd wrangler secret put BUNGIE_CLIENT_SECRET`, genauso für `BUNGIE_API_KEY` und `BUNGIE_CLIENT_ID`.
+
+## 2. Bungie-App einrichten (nur ohne Worker)
 
 Lege auf https://www.bungie.net/de/Application eine **eigene, zweite** Bungie-App an. Die App der Desktop-Version hat schon eine andere Redirect-URL, und Bungie erlaubt pro App nur eine.
 
