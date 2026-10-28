@@ -4,6 +4,7 @@ import { createData, I } from './data.mjs';
 import { authorizeUrl, createBungie } from './bungie.mjs';
 import { buildInventory, filterItems, GEAR, VAULT } from './inventory.mjs';
 import { createExtra } from './extra.mjs';
+import { createCloud } from './cloud.mjs';
 
 const DEFAULT_SETTINGS = {
   wishlistUrls: 'https://raw.githubusercontent.com/48klocs/dim-wish-list-sources/master/voltron.txt',
@@ -30,7 +31,8 @@ export function createCore({ store, cache, auth = '', visible = () => true, bung
   // ponytail: Secret/Tokens unverschlüsselt in localStorage (nur dieses Gerät, nur diese Seite) – wie DIM selbst
   const secret = store.get('secret') ?? {}; // {clientSecret, auth}
   secret.auth ??= {};
-  const save = () => { store.set('db', db); store.set('secret', secret); };
+  let cloud = null;
+  const save = () => { cloud?.changed(); store.set('db', db); store.set('secret', secret); };
 
   const data = createData(cache);
   const previews = new Map();
@@ -123,10 +125,12 @@ export function createCore({ store, cache, auth = '', visible = () => true, bung
       live.inv = buildInventory(profile, data);
       live.synced = new Date().toISOString(); live.error = null;
       await extra.afterSync();
+      cloud?.pull(); // Loadouts, Sets, Shortcuts, Markierungen mit der anderen App abgleichen
     } catch (e) { live.error = e.message; }
   }
 
   const extra = createExtra({ db, live, data, bungie, move: (...a) => move(...a), save, addLoadout: (l) => addLoadout(l), current: () => current() });
+  cloud = auth ? createCloud({ url: auth, db, save, session: () => bungie.session?.() }) : null;
 
   // ---------- Aktionen ----------
   const find = (id) => live.inv?.items.find((i) => i.id === id) ?? (() => { throw new Error('Item nicht gefunden – neu laden'); })();
@@ -334,7 +338,7 @@ export function createCore({ store, cache, auth = '', visible = () => true, bung
                 return { ...x, name: d?.[I.name] ?? '?', icon: d?.[I.icon], gear: GEAR.includes(d?.[I.itemType]), equip: l.equipped.includes(x),
                   owned: !!live.inv?.items.some((i) => i.id === x.id || i.hash === x.hash) };
               }) })),
-              hotkeyErrors: live.hotkeyErrors, synced: live.synced, error: live.error, busy: live.busy,
+              cloud: cloud?.status ?? null, hotkeyErrors: live.hotkeyErrors, synced: live.synced, error: live.error, busy: live.busy,
               chars: inv?.chars ?? [], currencies: inv?.currencies ?? [], limits: inv?.limits, vaultCount: inv?.vaultCount, loadouts: inv?.loadouts ?? {},
               counts: inv && { god: inv.items.filter((i) => i.god.length).length, trash: inv.items.filter((i) => i.trash).length, items: inv.items.length },
             });

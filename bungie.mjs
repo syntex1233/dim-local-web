@@ -72,6 +72,7 @@ export function createBungie(cfg, auth, saveAuth) {
   return {
     login,
     get: (path) => api(path),
+    session: async () => (auth().access ? { token: await accessToken(), apiKey: cfg().apiKey } : null), // für den Cloud-Sync
     me: () => `/Destiny2/${mt()}/Profile/${auth().membershipId}`,
     def: (type, hash, lc = 'en') => api(`/Destiny2/Manifest/${type}/${hash}/?lc=${lc}`),
     definition: (hash, lc = 'en') => api(`/Destiny2/Manifest/DestinyInventoryItemDefinition/${hash}/?lc=${lc}`),

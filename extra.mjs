@@ -10,33 +10,37 @@ export const TAGS = ['favorit', 'behalten', 'zerlegen', 'pve', 'pvp', 'raid'];
 
 const val = (i, h) => i.stats?.find((s) => s.hash === h)?.value ?? 0;
 
-// Rüstungs-Optimierer: je Slot ein Teil der Klasse, höchstens ein Exotic (oder genau das gewünschte).
-// targets: {statHash: min} oder {statHash: [min, max]}. Bewertet wird zuerst, wie weit die Summe außerhalb von min–max liegt,
-// dann die Summe aller Werte.
-export function optimize(items, classType, targets = {}, exotic = 0, keep = 5) {
-  const want = Object.entries(targets).map(([h, v]) => [+h, ...(Array.isArray(v) ? [+v[0] || 0, +v[1] || Infinity] : [+v, Infinity])])
-    .filter(([, mn, mx]) => mn > 0 || mx < Infinity);
-  const score = (i) => (want.length ? want.reduce((a, [h]) => a + val(i, h), 0) : i.stats.reduce((a, s) => a + s.value, 0));
-  // ponytail: je Slot nur die 10 besten Legendären + 3 besten Exotics (13^5 Kombinationen); Pareto-Filter, falls das zu grob wird
+// Rüstungs-Optimierer wie in DIM: je Slot ein Teil der Klasse, höchstens ein Exotic.
+// o.stats: [{hash, on, min, max}] in Prioritätsreihenfolge; o.exotic: 0 = beliebig, -1 = keins, sonst Item-Hash;
+// o.pinned / o.excluded: Item-IDs. Rangfolge: zuerst wie weit außerhalb von min–max, dann Summe der aktiven Werte
+// (gedeckelt bei max), dann die Werte in Prioritätsreihenfolge.
+export function optimize(items, classType, o = {}, keep = 10) {
+  const st = (o.stats ?? []).map((x) => ({ hash: +x.hash, on: x.on !== false, min: +x.min || 0, max: x.max == null || x.max === '' ? Infinity : +x.max }));
+  const on = st.filter((x) => x.on);
+  const pinned = new Set(o.pinned ?? []), excluded = new Set(o.excluded ?? []), exotic = +o.exotic || 0;
+  const score = (i) => (on.length ? on : i.stats).reduce((a, x) => a + val(i, x.hash), 0);
+  // ponytail: je Slot nur die 12 besten Legendären + 4 besten Exotics (16^5 ≈ 1 Mio. Kombinationen); Pareto-Filter, falls das zu grob wird
   const slots = ARMOR.map((b) => {
-    const l = items.filter((i) => i.itemType === 2 && i.bucket === b && i.cls === classType && i.stats?.length && !i.postmaster)
+    const l = items.filter((i) => i.itemType === 2 && i.bucket === b && i.cls === classType && i.stats?.length && !i.postmaster && !excluded.has(i.id))
       .sort((a, c) => score(c) - score(a));
-    return [...l.filter((i) => i.tier !== 6).slice(0, 10), ...l.filter((i) => i.tier === 6 && (!exotic || i.hash === +exotic)).slice(0, 3)];
+    const pin = l.find((i) => pinned.has(i.id));
+    if (pin) return [pin];
+    return [...l.filter((i) => i.tier !== 6).slice(0, 12), ...(exotic === -1 ? [] : l.filter((i) => i.tier === 6 && (!exotic || i.hash === exotic)).slice(0, 4))];
   }).filter((l) => l.length);
-  const hashes = [...new Set(slots.flat().flatMap((i) => i.stats.map((s) => s.hash)))];
+  const hashes = [...new Set([...st.map((x) => x.hash), ...slots.flat().flatMap((i) => i.stats.map((s) => s.hash))])];
   const best = [], pick = [];
+  let combos = 0;
+  const better = (a, b) => a.miss - b.miss || b.sum - a.sum || on.reduce((r, x) => r || b.tot[x.hash] - a.tot[x.hash], 0);
   (function walk(n, exo) {
     if (n === slots.length) {
-      if (exotic && !exo) return;
+      if (exotic > 0 && !exo) return;
+      combos++;
       const tot = Object.fromEntries(hashes.map((h) => [h, 0]));
       for (const i of pick) for (const s of i.stats) tot[s.hash] += s.value;
-      const miss = want.reduce((a, [h, mn, mx]) => a + Math.max(0, mn - (tot[h] ?? 0)) + Math.max(0, (tot[h] ?? 0) - mx), 0);
-      const sum = hashes.reduce((a, h) => a + tot[h], 0);
-      const last = best.at(-1);
-      if (best.length < keep || miss < last.miss || (miss === last.miss && sum > last.sum)) {
-        best.push({ miss, sum, tot, items: [...pick] });
-        best.sort((a, b) => a.miss - b.miss || b.sum - a.sum);
-        best.length = Math.min(best.length, keep);
+      const r = { tot, miss: st.reduce((a, x) => a + Math.max(0, x.min - tot[x.hash]) + Math.max(0, tot[x.hash] - x.max), 0),
+        sum: on.reduce((a, x) => a + Math.min(tot[x.hash], x.max), 0) };
+      if (best.length < keep || better(r, best.at(-1)) < 0) {
+        best.push({ ...r, items: [...pick] }); best.sort(better); best.length = Math.min(best.length, keep);
       }
       return;
     }
@@ -45,6 +49,7 @@ export function optimize(items, classType, targets = {}, exotic = 0, keep = 5) {
       pick.push(i); walk(n + 1, exo || i.tier === 6); pick.pop();
     }
   })(0, false);
+  best.combos = combos;
   return best;
 }
 
@@ -156,9 +161,13 @@ export function createExtra({ db, live, data, bungie, move, save, addLoadout, cu
       if (path === '/api/weekly') return weekly();
       if (path === '/api/progress') return progress(q.get('charId') || undefined);
       if (path === '/api/optimize') {
-        const t = JSON.parse(q.get('targets') || '{}');
-        return optimize(live.inv?.items ?? [], +q.get('classType'), t, +q.get('exotic') || 0)
-          .map((r) => ({ miss: r.miss, items: r.items.map(short), stats: statList(r.tot) }));
+        const ct = +q.get('classType'), t0 = Date.now();
+        const res = optimize(live.inv?.items ?? [], ct, JSON.parse(q.get('opts') || '{}'));
+        // Vergleich: angelegte Rüstung des passenden Charakters
+        const ch = live.inv?.chars.find((c) => c.classType === ct), cur = {};
+        for (const i of live.inv?.items ?? []) if (ch && i.owner === ch.id && i.equipped && i.itemType === 2) for (const s of i.stats ?? []) cur[s.hash] = (cur[s.hash] ?? 0) + s.value;
+        return { combos: res.combos, ms: Date.now() - t0, current: cur,
+          results: res.map((r) => ({ miss: r.miss, items: r.items.map(short), stats: statList(r.tot) })) };
       }
       if (path === '/api/optimize/exotics') {
         const ct = +q.get('classType'), seenH = new Set();

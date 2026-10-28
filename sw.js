@@ -1,6 +1,6 @@
 // Service Worker: hält die App-Dateien für den Offline-Start bereit; immer zuerst aus dem Netz (Updates sofort)
-const CACHE = 'dimweb-v4';
-const SHELL = ['./', 'index.html', 'app.mjs', 'config.mjs', 'core.mjs', 'data.mjs', 'inventory.mjs', 'bungie.mjs', 'extra.mjs', 'manifest.webmanifest', 'icon-180.png', 'icon-512.png'];
+const CACHE = 'dimweb-v5';
+const SHELL = ['./', 'index.html', 'app.mjs', 'config.mjs', 'core.mjs', 'data.mjs', 'inventory.mjs', 'bungie.mjs', 'extra.mjs', 'cloud.mjs', 'manifest.webmanifest', 'icon-180.png', 'icon-512.png'];
 
 // Neue Version sofort aktiv; alte Caches weg
 self.addEventListener('install', (e) => { self.skipWaiting(); e.waitUntil(caches.open(CACHE).then((c) => c.addAll(SHELL))); });

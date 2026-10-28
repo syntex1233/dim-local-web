@@ -6,17 +6,39 @@ import os from 'node:os';
 import path from 'node:path';
 import { parseWishlist } from './data.mjs';
 import { optimize } from './extra.mjs';
+import { createCloud } from './cloud.mjs';
 import { createCore } from './core.mjs';
 
 // ---- Rüstungs-Optimierer: höchstens ein Exotic, Mindestwert erreicht
 {
   const mk = (id, b, tier, a, c) => ({ id, itemType: 2, bucket: b, cls: 0, tier, stats: [{ hash: 1, value: a }, { hash: 2, value: c }] });
   const items = [3448274439, 3551918588, 14239492, 20886954, 1585787867].flatMap((b, n) => [mk('l' + n, b, 5, 10, 30), mk('h' + n, b, 5, 30, 5), mk('x' + n, b, 6, 40, 40)]);
-  const [best] = optimize(items, 0, { 1: 150 });
+  const [best] = optimize(items, 0, { stats: [{ hash: 1, min: 150 }] });
   assert.equal(best.items.filter((i) => i.tier === 6).length, 1);
   assert.equal(best.tot[1], 160); assert.equal(best.miss, 0);
-  const [capped] = optimize(items, 0, { 1: [0, 100] }); // bis-Wert wird eingehalten
+  const [capped] = optimize(items, 0, { stats: [{ hash: 1, min: 0, max: 100 }] }); // bis-Wert wird eingehalten
   assert.ok(capped.tot[1] <= 100 && capped.miss === 0);
+  const [none] = optimize(items, 0, { exotic: -1, pinned: ['h0'], excluded: ['l1'] }); // kein Exotic, Pin, Ausschluss
+  assert.ok(none.items.every((i) => i.tier !== 6) && none.items.some((i) => i.id === 'h0') && !none.items.some((i) => i.id === 'l1'));
+}
+
+// ---- Cloud-Sync: erster Abgleich führt zusammen, danach gewinnt die neuere Änderung
+{
+  const remote = { loadouts: { v: [{ id: 'r' }], at: 5 } };
+  const realFetch = globalThis.fetch;
+  globalThis.fetch = async (u, o) => {
+    if (o.method === 'PUT') for (const [k, e] of Object.entries(JSON.parse(o.body))) if (e.at > (remote[k]?.at ?? 0)) remote[k] = e;
+    return Response.json(remote);
+  };
+  const db = { loadouts: [{ id: 'l' }], tags: {} };
+  const cloud = createCloud({ url: 'x', db, save: () => cloud.changed(), session: async () => ({ token: 't', apiKey: 'k' }) });
+  await cloud.pull();
+  assert.deepEqual(db.loadouts.map((x) => x.id), ['r', 'l']);
+  assert.deepEqual(remote.loadouts.v.map((x) => x.id), ['r', 'l']);
+  remote.loadouts = { v: [{ id: 'neu' }], at: Date.now() + 1000 };
+  await cloud.pull();
+  assert.deepEqual(db.loadouts, [{ id: 'neu' }]);
+  globalThis.fetch = realFetch;
 }
 
 // ---- Wishlist-Parser
@@ -104,7 +126,7 @@ const PLUGS = {
   701: { displayProperties: { name: 'Default Shader' }, plug: { plugCategoryHash: 33 }, itemCategoryHashes: [41] },
   711: { displayProperties: { name: 'Gold' }, plug: { plugCategoryHash: 33 }, itemCategoryHashes: [41] },
 };
-const fake = new Proxy({}, { get: (_, fn) => async (...a) => { calls.push([fn, ...a.map((x) => x?.id ?? x)]); return fn === 'profile' ? profile : fn === 'definition' ? (PLUGS[a[0]] ?? { screenshot: '/s.jpg' }) : 0; } });
+const fake = new Proxy({}, { get: (_, fn) => async (...a) => { if (fn !== 'session') calls.push([fn, ...a.map((x) => x?.id ?? x)]); return fn === 'profile' ? profile : fn === 'definition' ? (PLUGS[a[0]] ?? { screenshot: '/s.jpg' }) : 0; } });
 const srv = createCore({ store, cache, bungie: fake });
 srv.url = 'http://app/';
 // fetch auf die App-Pfade -> core.handle (die Oberfläche macht das genauso)
