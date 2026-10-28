@@ -454,7 +454,7 @@ $('#saveSc').onclick=()=>{const q=$('#q').value.trim();if(!q)return;const label=
 // gold = Perk gehört zu einer passenden/knappen Godroll-Empfehlung (★)
 const perkCols=(i,gold=new Set())=>`<div class="cols">${i.perks.map(col=>`<div class="col">${col.map(p=>`<span class="perk ${p.active?'act':''} ${gold.has(p.name)?'gold':''}" title="${esc(p.name)}${gold.has(p.name)?' – Godroll-Perk':''}">${p.icon?`<img src="${esc(img(p.icon))}" alt="">`:''}${esc(p.name)}${gold.has(p.name)?' ★':''}</span>`).join('')}</div>`).join('')}</div>`;
 // Godroll-Analyse: passende Empfehlungen mit Spaltenhinweis/Notiz, knapp verfehlte mit fehlenden Perks
-function godrollHtml(i,ex){if(!ex)return '';
+function godrollHtml(i,ex,inFinder){if(!ex)return '';
  const tag=r=>{const k=kind(r);return k.includes('pvp')?'<span class="tag pvp">PvP</span>':k.includes('pve')?'<span class="tag">PvE</span>':'';};
  const full=ex.rolls.filter(r=>!r.missing.length),near=ex.rolls.filter(r=>r.missing.length);
  const chips=(l,cls)=>l.map(n=>`<span class="perk ${cls}">${esc(n)}</span>`).join('');
@@ -462,7 +462,7 @@ function godrollHtml(i,ex){if(!ex)return '';
   `${full.map(r=>`<div class="card gr ok">${tag(r)}<b>${esc(r.title||'Wishlist-Roll')}</b><div style="margin-top:6px">${chips(r.have,'gold')}</div>${r.cols?`<div class="small" style="margin-top:6px"><span class="mut">Spalten:</span> ${esc(r.cols)}</div>`:''}${r.note?`<details class="small" style="margin-top:6px"><summary class="mut">Notiz der Wishlist</summary><div class="mut" style="margin-top:4px;white-space:pre-line">${esc(r.note)}</div></details>`:''}</div>`).join('')}
   ${near.length?`<div class="card gr near"><b class="small">${full.length?'Weitere Empfehlungen, knapp verfehlt':'Kein Godroll – aber knapp dran'}</b>${near.slice(0,6).map(r=>`<div class="neari">${tag(r)}<span>${esc(r.title||'Wishlist-Roll')}</span><div class="small"><span class="mut">es fehlt:</span> ${chips(r.missing,'miss')}</div></div>`).join('')}</div>`:''}
   ${!full.length&&!near.length?'<div class="card small mut">Keine Empfehlung passt, auch nicht knapp.</div>':''}`}
-  <button class="sm" data-gro="${esc(i.name)}">Im Godroll-Finder öffnen</button>`;}
+  ${inFinder?'':`<button class="sm" data-gro="${esc(i.name)}">Im Godroll-Finder öffnen</button>`}`;}
 // Subklasse wie im Spiel: Super, Fähigkeiten, Aspekte, Fragmente als Icons; Beschreibung im Tooltip (einzeln nachgeladen)
 const descs={};
 function needDescs(ps){const miss=ps.filter(p=>p.hash&&!(p.hash in descs));miss.forEach(p=>descs[p.hash]='');
@@ -513,11 +513,13 @@ async function grSearch(q){const r=await get('/api/godroll/search?q='+encodeURIC
 $('#grList').onclick=e=>{const t=e.target.closest('[data-w]');t&&grOpen(t.dataset.w);};
 const kind=r=>(r.title+' '+(r.note.match(/tags:\S+/)?.[0]??'')).toLowerCase();
 async function grOpen(name){const w=await get('/api/godroll/weapon?name='+encodeURIComponent(name));if(!w)return;
+ // je Exemplar dieselbe Analyse wie im Item-Fenster: Perks mit ★ und passende/knappe Empfehlungen
+ const exs=await Promise.all(w.owned.map(i=>get('/api/godroll/item?id='+encodeURIComponent(i.id)).catch(()=>null)));
  grCurrent=w;$('#grList').innerHTML='';const max=w.perks[0]?.count||1,filt=$('#grWeapon').dataset.f||'alle';
  const rolls=w.rolls.filter(r=>filt==='alle'||kind(r).includes(filt));
  $('#grWeapon').innerHTML=`<div class="card" style="margin-top:12px"><div class="row" style="gap:14px"><img src="${esc(img(w.icon))}" width="64" height="64" alt="" style="border-radius:6px">
   <div style="flex:1"><h1>${esc(w.name)}</h1><span class="mut">${esc(w.type)} · ${w.total} empfohlene Kombinationen · du besitzt ${w.owned.length}</span></div><button id="grBack">Zurück</button></div></div>
-  ${w.owned.length?`<div class="card"><h2 style="margin-top:0">Deine Exemplare</h2>${w.owned.map(i=>`<div class="roll"><div class="row" style="justify-content:space-between"><span>${i.god.length?'<span class="tag">GODROLL</span>':i.trash?'<span class="tag pvp" style="background:#c43b35;color:#fff">TRASH</span>':''}<b>${i.power}</b> <span class="mut small">${esc(charName(i.owner))}${i.locked?' · gesperrt':''}</span></span><button class="sm" data-item="${esc(i.id)}">Details</button></div>${i.god.length?`<div class="small" style="color:var(--acc)">${i.god.map(esc).join(' · ')}</div>`:''}${perkCols(i)}</div>`).join('')}</div>`:''}
+  ${w.owned.length?`<div class="card"><h2 style="margin-top:0">Deine Exemplare</h2>${w.owned.map((i,n)=>`<div class="roll"><div class="row" style="justify-content:space-between"><span>${i.god.length?'<span class="tag">GODROLL</span>':i.trash?'<span class="tag pvp" style="background:#c43b35;color:#fff">TRASH</span>':''}<b>${i.power}</b> <span class="mut small">${esc(charName(i.owner))}${i.locked?' · gesperrt':''}</span></span><button class="sm" data-item="${esc(i.id)}">Details</button></div>${perkCols(i,new Set(exs[n]?.rolls?.flatMap(r=>r.have)??[]))}${godrollHtml(i,exs[n],true)}</div>`).join('')}</div>`:''}
   <div class="row" style="gap:16px;align-items:flex-start">
   <div class="card" style="flex:1;min-width:300px"><h2 style="margin-top:0">Beliebteste Perks</h2>${w.perks.map(p=>`<div class="pbar"><div class="n">${p.icon?`<img src="${esc(img(p.icon))}" alt="">`:''}${esc(p.name)}</div><div class="b"><i style="width:${p.count/max*100}%"></i></div><span class="mut small">${p.count}</span></div>`).join('')}</div>
   <div class="card" style="flex:1.3;min-width:320px"><div class="row"><h2 style="margin:0;flex:1">Empfohlene Rolls</h2>${['alle','pve','pvp'].map(f=>`<button class="sm ${f===filt?'on':''}" data-gf="${f}">${f.toUpperCase()}</button>`).join('')}</div>
