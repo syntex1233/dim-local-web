@@ -18,6 +18,8 @@ import { createCore } from './core.mjs';
   assert.equal(best.tot[1], 160); assert.equal(best.miss, 0);
   const [capped] = optimize(items, 0, { stats: [{ hash: 1, min: 0, max: 100 }] }); // bis-Wert wird eingehalten
   assert.ok(capped.tot[1] <= 100 && capped.miss === 0);
+  const [modded] = optimize(items, 0, { stats: [{ hash: 1, min: 200 }], mods: true }); // 160 + 4×10 durch Stat-Mods
+  assert.ok(modded.miss === 0 && modded.mods.length === 5 && modded.tot[1] === 210);
   const [none] = optimize(items, 0, { exotic: -1, pinned: ['h0'], excluded: ['l1'] }); // kein Exotic, Pin, Ausschluss
   assert.ok(none.items.every((i) => i.tier !== 6) && none.items.some((i) => i.id === 'h0') && !none.items.some((i) => i.id === 'l1'));
 }

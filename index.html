@@ -81,6 +81,7 @@ label{display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--mut)
 .exoimg{width:56px;height:56px;border-radius:6px;flex:0 0 56px;display:block}.exoimg.none{background:linear-gradient(135deg,#4b2a6b 50%,#c9a227 50%)}
 .exogrid{display:grid;grid-template-columns:repeat(auto-fill,46px);gap:6px;width:100%}.exob{padding:2px;border-radius:6px;background:#0a0c10}.exob img{width:40px;height:40px;display:block;border-radius:4px}.exob.act{border-color:var(--acc);border-width:2px}
 .it .rm{position:absolute;top:-6px;right:-6px;padding:0 5px;font-size:10px;border-radius:50%;background:var(--card2)}
+.omod{display:flex;align-items:center;justify-content:center;gap:3px;font-size:12px;font-weight:700;padding:3px 0;border:1px solid var(--acc);border-radius:6px;background:#2a2618}.omod img{width:16px;height:16px}
 .obuild{padding:14px 0;border-bottom:1px solid var(--line)}.ohead{display:flex;flex-wrap:wrap;gap:6px 16px;align-items:center;margin-bottom:10px}.ohead span{display:flex;align-items:center;gap:4px}.ohead img{width:18px;height:18px}.ohead small{font-size:11px}
 .obody{display:flex;flex-wrap:wrap;gap:14px;align-items:center}.oitems{display:flex;gap:10px;flex-wrap:wrap}.oit{width:70px;display:grid;gap:4px}.oit .it{width:70px}.obtn{display:grid;gap:6px;margin-left:auto}
 @media(max-width:1000px){.opwrap{grid-template-columns:1fr}.opside{position:static;max-height:none}.obtn{display:flex;margin-left:0}.oit,.oit .it{width:58px}}
@@ -283,11 +284,12 @@ body{height:100dvh}
 <div class="card"><div class="row" style="justify-content:space-between"><b>Klasse</b><select id="opChar" aria-label="Klasse"></select></div></div>
 <div class="card"><h3 class="oh">Werte: Priorität &amp; Bereiche</h3><div id="opStats"></div></div>
 <div class="card"><h3 class="oh">Exotische Rüstung</h3><div id="opExoSel"></div><div id="opExoList" class="row" style="margin-top:10px"></div></div>
+<div class="card"><h3 class="oh">Mods</h3><label class="row" style="gap:8px;cursor:pointer"><input type="checkbox" id="opMods"> Stat-Mods automatisch hinzufügen</label><div class="mut small" style="margin-top:6px">Je Rüstungsteil ein Stat-Mod im allgemeinen Sockel: +10 (3 Energie) oder +5 (1 Energie). Zuerst werden Lücken zu den „von“-Werten gefüllt, dann nach Priorität. Beim Speichern und Anlegen werden die Mods mit eingesetzt.</div></div>
 <div class="card"><h3 class="oh">Angepinnt</h3><div id="opPinned"></div></div>
 <div class="card"><h3 class="oh">Ausgeschlossen</h3><div id="opExcl"></div></div>
 </aside>
 <div class="opmain">
-<div class="card small" style="line-height:1.6"><b id="opInfo">Lädt …</b><br><span class="mut">1. Wichtigste Werte nach oben schieben, Haken weg bei Werten, die egal sind. 2. Bereiche mit „von–bis“ festlegen. 3. Exotic wählen, Teile anpinnen 📌 oder ausschließen ⊘. Mods, Fragmente, Set-Boni und Tuning sind nicht eingerechnet.</span></div>
+<div class="card small" style="line-height:1.6"><b id="opInfo">Lädt …</b><br><span class="mut">1. Wichtigste Werte nach oben schieben, Haken weg bei Werten, die egal sind. 2. Bereiche mit „von–bis“ festlegen. 3. Exotic wählen, Teile anpinnen 📌 oder ausschließen ⊘. Stat-Mods optional unter „Mods“; Fragmente, Set-Boni und Tuning sind nicht eingerechnet.</span></div>
 <div id="opOut"></div>
 </div></div>
 </section>
@@ -733,7 +735,7 @@ document.addEventListener('click',async e=>{const b=e.target.closest('button');i
  if(d.farm!==undefined)api('/api/farm',{charId:d.farm}).then(()=>{toast(d.farm?'Farmen-Modus an':'Farmen-Modus aus');render();}).catch(e=>toast(esc(e.message),true));
  if(d.prc){prChar=d.prc;loadPr();}
  if(d.ops!==undefined||d.opa!==undefined){const r=opRes[+(d.ops??d.opa)],ct=+$('#opChar').value,name=prompt('Name für das Loadout:','Optimierer '+r.stats.map(s=>s.value).join('/'));if(!name)return;
-  const lo=await api('/api/optimize/save',{ids:r.items.map(i=>i.id),classType:ct,name});tick();
+  const lo=await api('/api/optimize/save',{ids:r.items.map(i=>i.id),classType:ct,name,mods:(r.mods??[]).map(m=>m.plug)});tick();
   if(d.opa!==undefined){const c=S.chars.find(c=>c.classType===ct);if(c)act('/api/myloadout/apply',{id:lo.id,charId:c.id},'Loadout angelegt');}else toast('Loadout gespeichert – unter „Loadouts“');}});
 // Inventar leeren: nicht angelegte Waffen und Rüstung des gewählten Charakters in den Tresor (Ghost, Sparrow & Co. bleiben)
 $('#emptyInv').onclick=async()=>{const n=carryItems.filter(i=>i.owner===eqChar&&(i.itemType===2||i.itemType===3)).length;
@@ -763,9 +765,14 @@ async function loadOp(){if(!S.chars.length)return;
  const cur=$('#opChar').value;$('#opChar').innerHTML=S.chars.map(c=>`<option value="${c.classType}">${esc(c.cls)}</option>`).join('');if(cur)$('#opChar').value=cur;
  await opClass();}
 async function opClass(){opLoad();opExos=await get('/api/optimize/exotics?classType='+$('#opChar').value);
- opItems=Object.fromEntries((await get('/api/items?limit=5000&q=is:armor')).map(i=>[i.id,i]));drawOp();runOp();}
+ opItems=Object.fromEntries((await get('/api/items?limit=5000&q=is:armor')).map(i=>[i.id,i]));
+ // gemerkte Auswahl aufräumen, falls das Exotic oder Teile nicht mehr da sind
+ if(OP.exotic>0&&!opExos.some(e=>e.hash===OP.exotic))OP.exotic=0;OP.pinned=OP.pinned.filter(id=>opItems[id]);OP.excluded=OP.excluded.filter(id=>opItems[id]);
+ drawOp();runOp();}
 $('#opChar').onchange=opClass;
+$('#opMods').onchange=e=>{OP.mods=e.target.checked;opChange(false);};
 function drawOp(){
+ $('#opMods').checked=!!OP.mods;
  $('#opStats').innerHTML=OP.stats.map((x,n)=>{const s=opInfo(x.hash);return `<div class="ost ${x.on?'':'off'}">
   <div class="row" style="gap:8px"><input type="checkbox" ${x.on?'checked':''} data-oon="${n}" aria-label="${esc(s.name)} maximieren">${s.icon?`<img src="${esc(img(s.icon))}" alt="">`:''}<b style="flex:1">${esc(s.name)}</b>
   <button class="obt" data-oup="${n}" ${n?'':'disabled'} aria-label="höher priorisieren">↑</button><button class="obt" data-odn="${n}" ${n<OP.stats.length-1?'':'disabled'} aria-label="niedriger priorisieren">↓</button></div>
@@ -804,8 +811,8 @@ async function runOp(){if(!OP)return;$('#opInfo').textContent='Rechne …';
   return `<div class="obuild"><div class="ohead"><b>Gesamt: ${tot}</b>${order.map(h=>{const s=by[h];if(!s)return '';const x=OP.stats.find(y=>y.hash===h),d=s.value-(r.current[h]??0);
    return `<span class="${x.on?'':'mut'}" title="${esc(s.name)}${d?` (${d>0?'+':''}${d} zur angelegten Rüstung)`:''}">${s.icon?`<img src="${esc(img(s.icon))}" alt="">`:''}<b>${s.value}</b>${d?`<small style="color:var(--${d>0?'ok':'bad'})">${d>0?'+':''}${d}</small>`:''}</span>`;}).join('')}
    ${res.miss?`<span class="err small">${res.miss} außerhalb der Bereiche</span>`:''}</div>
-  <div class="obody"><div class="oitems">${res.items.map(i=>`<div class="oit"><div class="it ${i.tier===6?'exo':''}" data-item="${esc(i.id)}" title="${esc(i.name)} · ${esc(charName(i.owner))}"><img src="${esc(img(i.icon))}" alt="${esc(i.name)}">${i.power?`<span class="pw">${i.power}</span>`:''}</div>
-   <div class="row" style="gap:2px;justify-content:center"><button class="obt ${OP.pinned.includes(i.id)?'act':''}" data-opin="${esc(i.id)}" title="Anpinnen: immer dieses Teil verwenden">📌</button><button class="obt" data-oexc="${esc(i.id)}" title="Ausschließen">⊘</button></div></div>`).join('')}</div>
+  <div class="obody"><div class="oitems">${res.items.map((i,k)=>`<div class="oit"><div class="it ${i.tier===6?'exo':''}" data-item="${esc(i.id)}" title="${esc(i.name)} · ${esc(charName(i.owner))}"><img src="${esc(img(i.icon))}" alt="${esc(i.name)}">${i.power?`<span class="pw">${i.power}</span>`:''}</div>
+   <div class="row" style="gap:2px;justify-content:center"><button class="obt ${OP.pinned.includes(i.id)?'act':''}" data-opin="${esc(i.id)}" title="Anpinnen: immer dieses Teil verwenden">📌</button><button class="obt" data-oexc="${esc(i.id)}" title="Ausschließen">⊘</button></div>${res.mods?.[k]?`<div class="omod" title="${res.mods[k].value===10?'':'Kleiner '}${esc(opInfo(res.mods[k].hash).name)}-Mod">${opInfo(res.mods[k].hash).icon?`<img src="${esc(img(opInfo(res.mods[k].hash).icon))}" alt="">`:''}+${res.mods[k].value}</div>`:''}</div>`).join('')}</div>
   <div class="obtn"><button class="sm" data-ops="${n}">Loadout speichern</button><button class="sm pri" data-opa="${n}">Anlegen</button></div></div></div>`;}).join('');}
 async function loadWk(){const n=new Date(),r=new Date(n);r.setUTCHours(17,0,0,0);r.setUTCDate(r.getUTCDate()+(2-r.getUTCDay()+7)%7);if(r<=n)r.setUTCDate(r.getUTCDate()+7);
  $('#wkReset').textContent=`Nächster Wochen-Reset: ${r.toLocaleString('de-DE',{weekday:'long',day:'numeric',month:'long',hour:'2-digit',minute:'2-digit'})} – noch ${Math.floor((r-n)/864e5)} Tage ${Math.floor((r-n)/36e5)%24} Std.`;

@@ -9,6 +9,23 @@ const XUR = 2190858386; // Xûr-Händler
 export const TAGS = ['favorit', 'behalten', 'zerlegen', 'pve', 'pvp', 'raid'];
 
 const val = (i, h) => i.stats?.find((s) => s.hash === h)?.value ?? 0;
+// Stat-Mods für den allgemeinen Sockel: Wert -> [Mod +10 (3 Energie), kleiner Mod +5 (1 Energie)]
+export const STAT_MODS = { 2996146975: [4183296050, 1703647492], 392767087: [1180408010, 2532323436], 1943323491: [4204488676, 1237786518],
+  1735777505: [1435557120, 4021790309], 144602215: [2724608735, 350061697], 4244567218: [4287799666, 2639422088] };
+
+// Ein Stat-Mod je Rüstungsteil: zuerst Lücken zu den Mindestwerten füllen (größte Lücke zuerst),
+// dann die Werte nach Priorität bis zum Höchstwert; +5, wenn +10 über den Höchstwert ginge.
+function addMods(tot, st, on, n) {
+  const mods = [];
+  for (let k = 0; k < n; k++) {
+    const gap = st.filter((x) => tot[x.hash] < x.min).sort((a, b) => (b.min - tot[b.hash]) - (a.min - tot[a.hash]))[0];
+    const x = gap ?? on.find((y) => tot[y.hash] + 10 <= y.max) ?? on.find((y) => tot[y.hash] + 5 <= y.max);
+    if (!x) break;
+    const v = tot[x.hash] + 10 <= x.max ? 10 : 5;
+    tot[x.hash] += v; mods.push({ hash: x.hash, value: v });
+  }
+  return mods;
+}
 
 // Rüstungs-Optimierer wie in DIM: je Slot ein Teil der Klasse, höchstens ein Exotic.
 // o.stats: [{hash, on, min, max}] in Prioritätsreihenfolge; o.exotic: 0 = beliebig, -1 = keins, sonst Item-Hash;
@@ -37,7 +54,8 @@ export function optimize(items, classType, o = {}, keep = 10) {
       combos++;
       const tot = Object.fromEntries(hashes.map((h) => [h, 0]));
       for (const i of pick) for (const s of i.stats) tot[s.hash] += s.value;
-      const r = { tot, miss: st.reduce((a, x) => a + Math.max(0, x.min - tot[x.hash]) + Math.max(0, tot[x.hash] - x.max), 0),
+      const mods = o.mods ? addMods(tot, st, on, pick.length) : [];
+      const r = { tot, mods, miss: st.reduce((a, x) => a + Math.max(0, x.min - tot[x.hash]) + Math.max(0, tot[x.hash] - x.max), 0),
         sum: on.reduce((a, x) => a + Math.min(tot[x.hash], x.max), 0) };
       if (best.length < keep || better(r, best.at(-1)) < 0) {
         best.push({ ...r, items: [...pick] }); best.sort(better); best.length = Math.min(best.length, keep);
@@ -167,7 +185,8 @@ export function createExtra({ db, live, data, bungie, move, save, addLoadout, cu
         const ch = live.inv?.chars.find((c) => c.classType === ct), cur = {};
         for (const i of live.inv?.items ?? []) if (ch && i.owner === ch.id && i.equipped && i.itemType === 2) for (const s of i.stats ?? []) cur[s.hash] = (cur[s.hash] ?? 0) + s.value;
         return { combos: res.combos, ms: Date.now() - t0, current: cur,
-          results: res.map((r) => ({ miss: r.miss, items: r.items.map(short), stats: statList(r.tot) })) };
+          results: res.map((r) => ({ miss: r.miss, items: r.items.map(short), stats: statList(r.tot),
+            mods: r.mods.map((m) => ({ ...m, plug: STAT_MODS[m.hash]?.[m.value === 10 ? 0 : 1] })) })) };
       }
       if (path === '/api/optimize/exotics') {
         const ct = +q.get('classType'), seenH = new Set();
@@ -186,7 +205,8 @@ export function createExtra({ db, live, data, bungie, move, save, addLoadout, cu
     if (path === '/api/optimize/save') {
       const ids = new Set(b.ids ?? []);
       const items = (live.inv?.items ?? []).filter((i) => ids.has(i.id));
-      return addLoadout({ name: b.name || 'Optimierer', classType: +b.classType, equipped: items.map((i) => ({ id: i.id, hash: i.hash })) });
+      return addLoadout({ name: b.name || 'Optimierer', classType: +b.classType, equipped: items.map((i) => ({ id: i.id, hash: i.hash })),
+        parameters: { mods: (b.mods ?? []).filter(Boolean) } }); // Stat-Mods setzt applyLoadout in die allgemeinen Sockel
     }
     return undefined;
   }
