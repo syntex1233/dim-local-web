@@ -105,7 +105,16 @@ export function createData(cache) {
   }
 
   const item = (h) => data?.items[h];
-  const perk = (p) => ({ hash: p, name: data.items[p]?.[I.name] ?? p, icon: data.items[p]?.[I.icon] });
+  // Manche Perk-Varianten (z.B. aus Wishlists) haben kein eigenes Bild: Bild einer gleichnamigen Variante nehmen
+  let iconOf = null;
+  const nameIcon = (n) => {
+    if (!iconOf || iconOf.d !== data) {
+      iconOf = { d: data, m: new Map() };
+      for (const x of Object.values(data.items)) if (x[I.itemType] === 19 && x[I.icon] && !iconOf.m.has(x[I.name])) iconOf.m.set(x[I.name], x[I.icon]);
+    }
+    return iconOf.m.get(n);
+  };
+  const perk = (p) => ({ hash: p, name: data.items[p]?.[I.name] ?? p, icon: data.items[p]?.[I.icon] || nameIcon(data.items[p]?.[I.name]) });
 
   function search(q) {
     if (!data || !q.trim()) return [];

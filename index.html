@@ -85,6 +85,7 @@ label{display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--mut)
 .obuild{padding:14px 0;border-bottom:1px solid var(--line)}.ohead{display:flex;flex-wrap:wrap;gap:6px 16px;align-items:center;margin-bottom:10px}.ohead span{display:flex;align-items:center;gap:4px}.ohead img{width:18px;height:18px}.ohead small{font-size:11px}
 .obody{display:flex;flex-wrap:wrap;gap:14px;align-items:center}.oitems{display:flex;gap:10px;flex-wrap:wrap}.oit{width:70px;display:grid;gap:4px}.oit .it{width:70px}.obtn{display:grid;gap:6px;margin-left:auto}
 @media(max-width:1000px){.opwrap{grid-template-columns:1fr}.opside{position:static;max-height:none}.obtn{display:flex;margin-left:0}.oit,.oit .it{width:58px}}
+.clamp{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}.clamp.open{display:block}.more{margin-top:4px;padding:2px 8px}
 .carry{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:10px}.carry .items{grid-template-columns:repeat(3,1fr);max-width:240px}
 .eqwrap{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:14px}
 .pv img{width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:8px;margin-top:12px;background:#000;display:block}.pv i{display:block;margin-top:8px;color:var(--mut);font-size:13px}
@@ -524,10 +525,11 @@ async function grOpen(name){const w=await get('/api/godroll/weapon?name='+encode
   <div class="card" style="flex:1;min-width:300px"><h2 style="margin-top:0">Beliebteste Perks</h2>${w.perks.map(p=>`<div class="pbar"><div class="n">${p.icon?`<img src="${esc(img(p.icon))}" alt="">`:''}${esc(p.name)}</div><div class="b"><i style="width:${p.count/max*100}%"></i></div><span class="mut small">${p.count}</span></div>`).join('')}</div>
   <div class="card" style="flex:1.3;min-width:320px"><div class="row"><h2 style="margin:0;flex:1">Empfohlene Rolls</h2>${['alle','pve','pvp'].map(f=>`<button class="sm ${f===filt?'on':''}" data-gf="${f}">${f.toUpperCase()}</button>`).join('')}</div>
   ${rolls.map(r=>`<div class="roll">${kind(r).includes('pvp')?'<span class="tag pvp">PvP</span>':kind(r).includes('pve')?'<span class="tag">PvE</span>':''}<b>${esc(r.title||'Wishlist-Roll')}</b> <span class="mut small">${r.combos} Kombis</span>
-   ${r.cols?`<div class="small" style="margin:4px 0">${esc(r.cols)}</div>`:`<div>${r.perks.map(p=>`<span class="perk">${p.icon?`<img src="${esc(img(p.icon))}" alt="">`:''}${esc(p.name)}</span>`).join('')}</div>`}
-   ${r.note?`<div class="mut small">${esc(r.note)}</div>`:''}</div>`).join('')||'<span class="mut">Keine Rolls für diesen Filter.</span>'}</div></div>`;
+   <div style="margin:6px 0">${[...new Map(r.perks.map(p=>[p.name,p])).values()].map(p=>`<span class="perk">${p.icon?`<img src="${esc(img(p.icon))}" alt="">`:''}${esc(p.name)}</span>`).join('')}</div>
+   ${r.cols?`<div class="small mut">Spalten: ${esc(r.cols)}</div>`:''}
+   ${r.note?`<div class="mut small clamp" style="margin-top:4px">${esc(r.note)}</div>${r.note.length>180?'<button class="sm more" data-more>Mehr anzeigen</button>':''}`:''}</div>`).join('')||'<span class="mut">Keine Rolls für diesen Filter.</span>'}</div></div>`;
  $('#grBack').onclick=()=>{$('#grWeapon').innerHTML='';grSearch($('#grQ').value);};}
-$('#grWeapon').addEventListener('click',e=>{const b=e.target.closest('[data-gf]');if(b){$('#grWeapon').dataset.f=b.dataset.gf;grOpen(grCurrent.name);}});
+$('#grWeapon').addEventListener('click',e=>{const m=e.target.closest('[data-more]');if(m){const c=m.previousElementSibling.classList.toggle('open');m.textContent=c?'Weniger anzeigen':'Mehr anzeigen';return;}const b=e.target.closest('[data-gf]');if(b){$('#grWeapon').dataset.f=b.dataset.gf;grOpen(grCurrent.name);}});
 
 // ---- Transmog: links die angelegten Teile, rechts Auswahl mit Suche
 let TM={items:[],names:{}},tmChar=null,tmPick=null;
