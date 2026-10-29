@@ -268,6 +268,15 @@ try {
   assert.equal((await post('/api/tag', { id: 'A', tag: 'zerlegen' })).status, 200);
   assert.deepEqual((await json(await fetch(srv.url + 'api/items?q=tag:zerlegen'))).map((i) => i.id), ['A']);
   await post('/api/tag', { id: 'A' });
+  // Auswahl: mehrere markieren (Notiz bleibt), Massenaktion nur für die Auswahl
+  await post('/api/tag', { id: 'B', tag: 'behalten', note: 'Notiz' });
+  await post('/api/tag', { ids: ['B', 'V'], tag: 'zerlegen' });
+  assert.deepEqual((await items('tag:zerlegen')).map((i) => [i.id, i.note]).sort(), [['B', 'Notiz'], ['V', '']]);
+  await post('/api/tag', { ids: ['B', 'V'], tag: '' });
+  assert.deepEqual((await items('tag:zerlegen')).length, 0);
+  calls.length = 0;
+  assert.equal((await json(await post('/api/bulk', { ids: ['V'], action: 'lock' }))).ok, 1);
+  assert.deepEqual(calls.filter((c) => c[0] === 'lock').map((c) => c[1]), ['V'], 'nur ausgewählte Items');
 
   // Suche nach Perks, auch mit englischem Namen; Godroll-Finder findet Waffen über empfohlene Perks
   assert.ok((await json(await fetch(srv.url + 'api/items?q=raserei'))).some((i) => i.id === 'A'));

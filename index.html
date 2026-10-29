@@ -95,6 +95,8 @@ label{display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--mut)
 .pvd{padding:6px 12px 10px;background:var(--side);border-radius:0 0 8px 8px}.pvd:empty{display:none}.pvteam{margin-top:8px}
 .pvpl{display:flex;gap:10px;align-items:center;padding:5px 4px;cursor:pointer;border-radius:6px;font-variant-numeric:tabular-nums}.pvpl:hover{background:var(--card2)}.pvpl img,.pvpl .noic{width:28px;height:28px;flex:none}.pvpl b{width:40px;text-align:right}
 @media(max-width:600px){.pvs{grid-template-columns:1fr 1fr}.pvs .stat{padding:10px 12px}.pvs .stat b{font-size:20px}.pvm{grid-template-columns:74px 1fr auto}.pvm>b:last-child{display:none}}
+#pickBar{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);display:none;flex-wrap:wrap;align-items:center;gap:8px;z-index:9;max-width:calc(100% - 32px);background:var(--side);border:1px solid var(--acc);border-radius:12px;padding:10px 14px;box-shadow:0 10px 30px #000a}
+#pickBar.on{display:flex}#pickBar select{width:auto}.it.pick{outline:3px solid var(--acc);outline-offset:1px}.it.pick::after{content:'✓';position:absolute;top:2px;left:4px;color:var(--acc);font-weight:700;text-shadow:0 0 3px #000}
 .carry{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:10px}.carry .items{grid-template-columns:repeat(3,1fr);max-width:240px}
 .eqwrap{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:14px}
 .pv img{width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:8px;margin-top:12px;background:#000;display:block}.pv i{display:block;margin-top:8px;color:var(--mut);font-size:13px}
@@ -234,15 +236,13 @@ body{height:100dvh}
 <h2 id="artTitle">Artefakt</h2><div id="artifact"></div>
 <h2 id="pmTitle">Postmaster</h2><div id="pmList"></div>
 <h2>Ressourcen</h2><div class="stats" id="stats"></div>
-<h2>Schnellzugriff</h2>
-<div class="row"><button data-q="is:godroll is:weapon">Meine Godrolls</button><button data-q="is:godroll -is:locked">Ungesperrte Godrolls</button><button data-q="is:trash -is:locked">Trash-Rolls</button><button data-q="is:dupe is:weapon -is:godroll -is:locked">Dupes ohne Godroll</button><button data-q="tag:zerlegen">Zum Zerlegen markiert</button><button data-junk>Zerlege-Stapel holen</button></div>
-<div class="row" id="homeShortcuts" style="margin-top:8px"></div>
 </section>
 
 <section data-tab="inv">
 <div class="toolbar">
 <div class="row" style="justify-content:space-between"><h1 style="margin:0">Inventar</h1><span class="mut" id="hitCount"></span></div>
-<div class="row" style="margin-top:10px"><input id="q" placeholder="Suche: Name oder Perk, auch Englisch – is:godroll, -is:locked …" style="flex:1;min-width:260px" autocomplete="off"><button id="saveSc">Als Shortcut speichern</button></div>
+<div class="row" style="margin-top:10px"><input id="q" placeholder="Suche: Name oder Perk, auch Englisch – is:godroll, -is:locked …" style="flex:1;min-width:260px" autocomplete="off"><button id="saveSc">Als Shortcut speichern</button><button id="pickBtn" title="Mehrere Items auswählen (oder Strg-/Umschalt-Klick)">Auswählen</button></div>
+<div class="row quick" style="margin-top:10px"><button class="sm" data-q="is:godroll is:weapon">Meine Godrolls</button><button class="sm" data-q="is:godroll -is:locked">Ungesperrte Godrolls</button><button class="sm" data-q="is:trash -is:locked">Trash-Rolls</button><button class="sm" data-q="is:dupe is:weapon -is:godroll -is:locked">Dupes ohne Godroll</button><button class="sm" data-q="tag:zerlegen">Zum Zerlegen markiert</button><span id="homeShortcuts" class="row" style="display:contents"></span></div>
 <div class="filters">
 <select id="fCat" aria-label="Kategorie"><option value="">Alle Kategorien</option><option value="is:weapon">Waffen</option><option value="is:armor">Rüstung</option><option value="-is:weapon -is:armor">Ghosts, Sparrows &amp; Co</option></select>
 <select id="fSlot" aria-label="Slot"><option value="">Alle Slots</option><optgroup label="Waffen"><option value="slot:kinetik">Kinetik</option><option value="slot:energie">Energie</option><option value="slot:power">Power</option></optgroup><optgroup label="Rüstung"><option value="slot:helm">Helm</option><option value="slot:arme">Arme</option><option value="slot:brust">Brust</option><option value="slot:beine">Beine</option><option value="slot:klasse">Klassengegenstand</option></optgroup><optgroup label="Sonstiges"><option value="slot:ghost">Ghost</option><option value="slot:sparrow">Sparrow</option><option value="slot:schiff">Schiff</option><option value="slot:emblem">Emblem</option></optgroup></select>
@@ -361,6 +361,11 @@ DIM Local spricht direkt von diesem Gerät mit Bungie. Dafür brauchst du einmal
 </section>
 </main>
 <aside id="drawer"></aside>
+<aside id="pickBar" aria-label="Auswahl"><b id="pickN"></b>
+<select id="pickTag" aria-label="Markierung"><option value="">Markierung entfernen</option></select><button class="sm" data-pk="tag">Markieren</button>
+<button class="sm" data-pk="vault">In den Tresor</button><button class="sm" data-pk="char">Zum Charakter</button><button class="sm" data-pk="lock">Sperren</button><button class="sm" data-pk="unlock">Entsperren</button>
+<button class="sm" data-pk="all">Alle Treffer</button><button class="sm" data-pk="end">Fertig</button></aside>
+
 <div id="toast" role="status"></div>
 <script>
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
@@ -442,7 +447,7 @@ async function loadItems(){if(location.hash!=='#inv')return;
  $('#hitCount').textContent=`${items.length} Items`;
  const srt=$('#fSort').value;
  items.sort(srt==='name'?(a,b)=>a.name.localeCompare(b.name,'de'):srt==='type'?(a,b)=>a.type.localeCompare(b.type,'de')||b.power-a.power:srt==='power'?(a,b)=>b.power-a.power:(a,b)=>bIdx(a)-bIdx(b)||b.power-a.power);
- const cell=i=>`<div class="it t${i.tier}" draggable="true" data-item="${esc(i.id)}" title="${esc(i.name)} · ${esc(i.type)} · ${esc(charName(i.owner))}${i.god.length?' · Godroll: '+esc(i.god.join(', ')):''}">
+ const cell=i=>`<div class="it t${i.tier}${PICK.has(i.id)?' pick':''}" draggable="true" data-item="${esc(i.id)}" title="${esc(i.name)} · ${esc(i.type)} · ${esc(charName(i.owner))}${i.god.length?' · Godroll: '+esc(i.god.join(', ')):''}">
   <img src="${esc(img(i.icon))}" alt="${esc(i.name)}" loading="lazy"><div class="bd">${i.god.length?'<span class="bdg">GOD</span>':''}${i.trash?'<span class="bdg trash">TRASH</span>':''}${i.equipped?'<span class="bdg eq">E</span>':''}${i.locked?'<span class="bdg lock">🔒</span>':''}${i.tag?`<span class="bdg tg" title="${TAGN[i.tag]}">${TAGI[i.tag]}</span>`:''}</div>
   ${i.power?`<span class="pw">${i.power}</span>`:''}</div>`;
  if(!items.length){$('#items').innerHTML='<span class="mut">Keine Treffer.</span>';return;}
@@ -772,6 +777,27 @@ const fitH=()=>{const port=innerHeight>innerWidth,sh=port?Math.max(screen.width,
  const vh=u=>{pr.style.height='100'+u;const h=pr.offsetHeight-parseFloat(cs.paddingTop)-parseFloat(cs.paddingBottom);return Math.round(h);};const units=['vh','dvh','svh','lvh'].map(u=>u+' '+vh(u)).join(', ');
  $('#vpInfo').textContent=`Fenster ${innerWidth}×${innerHeight} · Bildschirm ${screen.width}×${screen.height} · Home-Bildschirm-App: ${navigator.standalone?'ja':'nein'} · Body ${document.body.offsetHeight}px · Leiste unten bei ${Math.round(document.querySelector('nav').getBoundingClientRect().bottom)}px · Safe-Area oben ${cs.paddingTop}, unten ${cs.paddingBottom} · ${units} · sichtbar ${Math.round(visualViewport?.height??0)}`;pr.remove();};
 addEventListener('resize',fitH);addEventListener('orientationchange',()=>setTimeout(fitH,300));setTimeout(fitH,0);
+// Mehrfachauswahl im Inventar: Strg-/Umschalt-Klick oder „Auswählen“; Leiste unten zum Markieren, Verschieben, Sperren
+const PICK=new Set();let pickMode=false;
+$('#pickTag').innerHTML+=Object.entries(TAGN).map(([k,n])=>`<option value="${k}" ${k==='zerlegen'?'selected':''}>${TAGI[k]} ${n}</option>`).join('');
+function drawPick(){document.querySelectorAll('#items [data-item]').forEach(t=>t.classList.toggle('pick',PICK.has(t.dataset.item)));
+ const n=PICK.size;$('#pickBtn').classList.toggle('act',pickMode);$('#pickBar').classList.toggle('on',n>0||pickMode);
+ $('#pickN').textContent=n?`${n} ausgewählt`:'Items anklicken';
+ $('#pickBar').querySelectorAll('[data-pk]').forEach(b=>b.disabled=!n&&!['all','end'].includes(b.dataset.pk));}
+const endPick=()=>{PICK.clear();pickMode=false;drawPick();};
+document.addEventListener('click',e=>{const t=e.target.closest('#items [data-item]');if(!t||!(pickMode||e.ctrlKey||e.metaKey||e.shiftKey))return;
+ e.preventDefault();e.stopImmediatePropagation();const id=t.dataset.item;PICK.has(id)?PICK.delete(id):PICK.add(id);drawPick();},true);
+$('#pickBtn').onclick=()=>pickMode?endPick():(pickMode=true,drawPick());
+addEventListener('keydown',e=>{if(e.key==='Escape'&&(pickMode||PICK.size))endPick();});
+addEventListener('hashchange',()=>{if(location.hash!=='#inv')endPick();});
+$('#pickBar').onclick=async e=>{const b=e.target.closest('[data-pk]');if(!b)return;const k=b.dataset.pk,ids=[...PICK];
+ if(k==='all'){lastItems.forEach(i=>PICK.add(i.id));return drawPick();}
+ if(k==='end')return endPick();
+ if(k==='tag'){const tag=$('#pickTag').value;try{await api('/api/tag',{ids,tag});toast(tag?`${ids.length} als „${TAGN[tag]}“ markiert`:`Markierung bei ${ids.length} entfernt`);}catch(e){toast(esc(e.message),true);}
+  endPick();return loadItems();}
+ b.disabled=true;await act('/api/bulk',{ids,action:k},`${ids.length} Items: erledigt`);endPick();};
+// Item-Übersicht schließen, wenn daneben geklickt wird (Klick auf ein anderes Item öffnet stattdessen dieses)
+document.addEventListener('click',e=>{if($('#drawer').classList.contains('open')&&!e.target.closest('#drawer,[data-item],button,a,input,select,label,#pickBar,#toast'))$('#drawer').classList.remove('open');});
 // Seiten: Optimierer, Woche, Fortschritt
 function showX(){const t=location.hash.slice(1);if(t==='optimizer')loadOp();if(t==='weekly')loadWk();if(t==='progress')loadPr();if(t==='pvp')loadPvp();}
 addEventListener('hashchange',showX);setTimeout(showX,800);

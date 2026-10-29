@@ -158,8 +158,8 @@ export function createCore({ store, cache, auth = '', visible = () => true, bung
     it.locked = state;
   }
 
-  async function bulk(query, action, charId = current()) {
-    const hits = filterItems(live.inv.items, query).filter((i) => !i.equipped);
+  async function bulk(query, action, charId = current(), ids = null) { // ids: Auswahl statt Suchanfrage
+    const hits = (ids ? live.inv.items.filter((i) => ids.includes(i.id)) : filterItems(live.inv.items, query)).filter((i) => !i.equipped);
     let ok = 0; const errors = [];
     for (const it of hits) {
       try {
@@ -388,7 +388,7 @@ export function createCore({ store, cache, auth = '', visible = () => true, bung
         case '/api/sync': return json(200, await busy('Lade Inventar …', sync));
         case '/api/move': return json(200, await busy('Verschiebe …', () => move(find(b.id), b.target, b.equip)));
         case '/api/lock': return json(200, await busy('Sperre …', () => lock(find(b.id), b.state)));
-        case '/api/bulk': return json(200, await busy('Massenaktion …', () => bulk(b.query, b.action, b.charId)));
+        case '/api/bulk': return json(200, await busy('Massenaktion …', () => bulk(b.query, b.action, b.charId, b.ids)));
         case '/api/run': return json(200, await busy('Aktion …', () => run(b)));
         case '/api/gameloadout/save': return json(200, await busy('Speichere Spiel-Loadout …', async () => {
           const ids = { nameHash: +b.nameHash, iconHash: +b.iconHash, colorHash: +b.colorHash };

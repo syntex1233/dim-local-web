@@ -256,10 +256,12 @@ export function createExtra({ db, live, data, bungie, move, save, addLoadout, cu
       }
       return undefined;
     }
-    if (path === '/api/tag') {
-      const it = live.inv?.items.find((i) => i.id === b.id);
-      if (b.tag || b.note) db.tags[b.id] = { tag: b.tag ?? '', note: b.note ?? '' }; else delete db.tags[b.id];
-      if (it) { it.tag = b.tag ?? ''; it.note = b.note ?? ''; }
+    if (path === '/api/tag') { // ein Item (id) oder eine Auswahl (ids); ohne note bleibt die vorhandene Notiz
+      for (const id of b.ids ?? [b.id]) {
+        const it = live.inv?.items.find((i) => i.id === id), note = b.note ?? db.tags[id]?.note ?? '';
+        if (b.tag || note) db.tags[id] = { tag: b.tag ?? '', note }; else delete db.tags[id];
+        if (it) { it.tag = b.tag ?? ''; it.note = note; }
+      }
       save(); return {};
     }
     if (path === '/api/pvp/track') { // Spieler beobachten/entfernen (wird mitsynchronisiert)
