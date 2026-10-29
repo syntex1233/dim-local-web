@@ -53,7 +53,8 @@ export function buildInventory(profile, data) {
     if (itemType === 16) it.setup = named();
     // Rüstung: eingesetzte Mods, dann Ornament und Shader; leere Sockel und Plugs ohne Typ (Statistik-Platzhalter) weg
     if (itemType === 2) {
-      const look = (p) => /Shader|Ornament/.test(p.type);
+      // Ornamente aus echten Rüstungsteilen (z. B. „Per Audacia“-Hose) sind selbst Rüstung (itemType 2) und heißen nur „Beinschutz“ o. Ä.
+      const look = (p) => /Shader|Ornament/.test(p.type) || data.item(p.hash)[I.itemType] === 2;
       const ps = named().filter((p) => p.type && !/^(leer|empty)/i.test(p.name));
       it.mods = [...ps.filter((p) => !look(p)), ...ps.filter(look)];
     }

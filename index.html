@@ -572,7 +572,7 @@ function renderPick(){const [it,s]=pickSocket();
  if(!s){$('#tmPick').innerHTML='<span class="mut">Links einen Shader oder ein Ornament anklicken.</span>';return;}
  $('#tmPick').innerHTML=`<div class="row" style="justify-content:space-between"><b>${KLABEL[s.kind]} für ${esc(it.name)}</b><span class="mut small">${s.options.length} freigeschaltet</span></div>
   <input id="tmQ" placeholder="${KLABEL[s.kind]} suchen …" autocomplete="off" style="width:100%;margin-top:10px">
-  <div class="tmmode"><span class="mut small">Anwenden auf:</span><div class="tabs" id="tmMode">${(s.kind==='shader'?[['one','Nur dieses Teil'],['armor','Alle Rüstungsteile'],['all','Alles inkl. Waffen']]:[['one','Nur dieses Teil'],['set','Passendes Set auf alle Rüstungsteile']]).map(([k,l])=>`<button class="sm ${tmMode===k?'act':''}" data-tmm="${k}">${l}</button>`).join('')}</div>
+  <div class="tmmode"><span class="mut small">Anwenden auf:</span><div class="tabs" id="tmMode">${(s.kind==='shader'?[['one','Nur dieses Teil'],['armor','Alle Rüstungsteile']]:[['one','Nur dieses Teil'],['set','Passendes Set auf alle Rüstungsteile']]).map(([k,l])=>`<button class="sm ${tmMode===k?'act':''}" data-tmm="${k}">${l}</button>`).join('')}</div>
   <button class="sm" data-tmo="${s.current}" title="Den aktuell eingesetzten ${KLABEL[s.kind]} mit dem gewählten Modus übertragen">⟳ Sync: aktuelles übertragen</button></div>
   <div class="tmopts" id="tmOpts"></div>`;
  $('#tmQ').oninput=drawOpts;drawOpts();$('#tmQ').focus();}

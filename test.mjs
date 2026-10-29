@@ -69,6 +69,7 @@ const gamedata = ({
     701: ['Standard-Shader', '/sh.png', 'Shader', 0, 0, 19, 3],
     711: ['Gold', '/gold.png', 'Shader', 0, 0, 19, 3],
     712: ['Gesperrt', '/x.png', 'Shader', 0, 0, 19, 3],
+    720: ['Per Audacia-Helm', '/pa.png', 'Kopfschutz', 5, 3448274439, 2, 0], // Ornament aus echter Rüstung
     700: ['Leerer Mod-Sockel', '/m.png', 'Kopfschutz-Mod', 0, 0, 19, 3],
     601: ['Gewittersturm', '/a.png', 'Super-Fähigkeit', 0, 0, 19, 3],
     800: ['Artefakt der Saison', '/art.png', 'Artefakt', 6, 0, 0, 3],
@@ -112,7 +113,7 @@ const profile = {
       V: { sockets: [{ plugHash: 2 }] },
       S: { sockets: [{ plugHash: 601 }, { plugHash: 602 }] }, // Subklasse: Fähigkeit, Aspekt
       ART: { sockets: [{ plugHash: 802 }, { plugHash: 899 }] }, // Artefakt: ein Perk gesetzt, ein Platz leer
-      H: { sockets: [{ plugHash: 700 }, { plugHash: 701 }] }, // Helm: leerer Mod-Sockel, Standard-Shader
+      H: { sockets: [{ plugHash: 700 }, { plugHash: 701 }, { plugHash: 720 }] }, // Helm: leerer Mod-Sockel, Standard-Shader, Rüstungs-Ornament
     } },
     reusablePlugs: { data: { V: { plugs: { 0: [{ plugItemHash: 2 }, { plugItemHash: 1 }] } } } }, // Explosivladung als Alternative
   },
@@ -123,6 +124,7 @@ const calls = [];
 const PLUGS = {
   4: { displayProperties: { name: 'Default Shader' }, plug: { plugCategoryHash: 33 }, itemCategoryHashes: [41, 52] },
   100: { sockets: { socketEntries: [{}, {}, { reusablePlugSetHash: 5000 }] } }, // Testwaffe: Sockel 2 = Shader-Set
+  200: { sockets: { socketEntries: [{}, { reusablePlugSetHash: 5000 }, {}] } }, // Helm: Sockel 1 = Shader-Set
   700: { displayProperties: { name: 'Empty Mod Socket' }, plug: { plugCategoryHash: 22 }, itemCategoryHashes: [59, 4104513227] },
   710: { displayProperties: { name: 'Hands-On' }, plug: { plugCategoryHash: 22 }, itemCategoryHashes: [59, 4104513227] },
   701: { displayProperties: { name: 'Default Shader' }, plug: { plugCategoryHash: 33 }, itemCategoryHashes: [41] },
@@ -176,7 +178,7 @@ try {
   assert.deepEqual((await items('perk:raserei is:vault')).map((i) => i.id), ['V']);
   assert.deepEqual((await items('owner:c1 is:weapon -is:equipped')).map((i) => i.id), ['B']);
   assert.deepEqual((await items('slot:helm')).map((i) => i.id), ['H']);
-  assert.deepEqual((await items('slot:helm'))[0].mods.map((p) => p.name), ['Standard-Shader'], 'Rüstungs-Mods ohne leere Sockel');
+  assert.deepEqual((await items('slot:helm'))[0].mods.map((p) => p.name), ['Standard-Shader', 'Per Audacia-Helm'], 'Rüstungs-Mods ohne leere Sockel, Ornament und Shader am Ende');
   assert.deepEqual((await items('type:handfeuerwaffe -is:vault')).map((i) => i.id).sort(), ['A', 'B']);
   const sub = (await items('slot:subklasse'));
   assert.deepEqual(sub.map((i) => [i.id, i.setup.map((p) => p.name)]), [['S', ['Gewittersturm']]], 'Subklassen-Setup mit Namen');
@@ -233,26 +235,31 @@ try {
   assert.deepEqual(saved.equipped, [{ id: 'A', hash: 100 }, { id: 'S', hash: 600, socketOverrides: { 0: 601, 1: 602 } }]);
   assert.equal((await json(await fetch(srv.url + 'api/state'))).myLoadouts.length, 3);
 
-  // Transmog: Shader-Sockel mit freigeschalteten Optionen, anwenden
+  // Transmog (nur Rüstung): Helm anlegen; Shader-Sockel mit freigeschalteten Optionen, Rüstungs-Ornament, anwenden
+  profile.profileInventory.data.items = profile.profileInventory.data.items.filter((r) => r.itemInstanceId !== 'H');
+  profile.characterEquipment.data.c1.items.push(raw('H', 200, 3448274439));
+  await json(await post('/api/sync', {}));
   const tm = await json(await fetch(srv.url + 'api/transmog?charId=c1'));
-  const tA = tm.items.find((i) => i.id === 'A');
-  assert.deepEqual(tA.sockets, [{ idx: 2, kind: 'shader', current: 4, options: [711] }], 'nur einsetzbare Shader');
+  assert.ok(!tm.items.some((i) => i.itemType === 3), 'Transmog nur für Rüstung');
+  const tH = tm.items.find((i) => i.id === 'H');
+  assert.deepEqual(tH.sockets.map((x) => [x.idx, x.kind, x.current]), [[1, 'shader', 701], [2, 'ornament', 720]], 'Rüstungs-Ornament erkannt');
+  assert.deepEqual(tH.sockets[0].options, [711], 'nur einsetzbare Shader');
   assert.equal(tm.names[711][0], 'Gold');
   calls.length = 0;
-  assert.deepEqual(await json(await post('/api/transmog/apply', { hash: 711, targets: [{ id: 'A', idx: 2 }] })), { ok: 1, errors: [] });
-  assert.deepEqual(calls, [['insertPlug', 'A', 'c1', 2, 711]]);
+  assert.deepEqual(await json(await post('/api/transmog/apply', { hash: 711, targets: [{ id: 'H', idx: 1 }] })), { ok: 1, errors: [] });
+  assert.deepEqual(calls, [['insertPlug', 'H', 'c1', 1, 711]]);
 
   // Transmog-Set: aktuellen Look speichern, später wieder anlegen
   await json(await post('/api/sync', {}));
   const tmH = (await json(await fetch(srv.url + 'api/transmog?charId=c1'))).items;
   assert.ok(tmH.every((i) => i.bucket), 'Slot je Teil für Sets');
   await json(await post('/api/db', { key: 'fashion', value: [
-    { id: 'f1', name: 'Gold', classType: 0, byBucket: { [KIN]: { shader: 711 } } },
-    { id: 'f2', name: 'Nicht da', classType: 0, byBucket: { [KIN]: { shader: 712 } } },
+    { id: 'f1', name: 'Gold', classType: 0, byBucket: { 3448274439: { shader: 711 } } },
+    { id: 'f2', name: 'Nicht da', classType: 0, byBucket: { 3448274439: { shader: 712 } } },
   ] }));
   calls.length = 0;
   assert.deepEqual(await json(await post('/api/fashion/apply', { id: 'f1', charId: 'c1' })), { ok: 1, errors: [] });
-  assert.deepEqual(calls.filter((c) => c[0] === 'insertPlug'), [['insertPlug', 'A', 'c1', 2, 711]]);
+  assert.deepEqual(calls.filter((c) => c[0] === 'insertPlug'), [['insertPlug', 'H', 'c1', 1, 711]]);
   const f2 = await json(await post('/api/fashion/apply', { id: 'f2', charId: 'c1' }));
   assert.equal(f2.ok, 0); assert.match(f2.errors[0], /nicht verfügbar/);
   assert.deepEqual((await json(await fetch(srv.url + 'api/state'))).fashion[0].look.map((x) => x.name), ['Gold']);

@@ -57,13 +57,14 @@ export function createCore({ store, cache, auth = '', visible = () => true, bung
       (d.sockets?.socketEntries ?? []).map((e) => e.reusablePlugSetHash || e.randomizedPlugSetHash || 0)).catch((e) => { socketSets.delete(hash); throw e; }));
     return socketSets.get(hash);
   };
-  // Angelegte Waffen/Rüstung eines Charakters mit Shader-/Ornament-Sockeln und den freigeschalteten Alternativen
+  // Ornament: eigene Kategorie oder ein Rüstungsteil als Plug (Ornamente aus echter Rüstung, z. B. „Per Audacia“-Hose)
+  const isOrnament = (h, cats) => cats.includes(CAT.ornament) || data.item(h)?.[I.itemType] === 2;
+  // Angelegte Rüstung eines Charakters mit Shader-/Ornament-Sockeln und den freigeschalteten Alternativen
   async function transmog(charId = current()) {
     const P = live.profile ?? {};
     const unlocked = (set) => [...(P.profilePlugSets?.data?.plugs?.[set] ?? []), ...(P.characterPlugSets?.data?.[charId]?.plugs?.[set] ?? [])]
       .filter((p) => p.canInsert !== false && data.item(p.plugItemHash)).map((p) => p.plugItemHash);
-    const items = live.inv.items.filter((i) => i.owner === charId && i.equipped && (i.itemType === 2 || i.itemType === 3))
-      .sort((a, b) => b.itemType - a.itemType);
+    const items = live.inv.items.filter((i) => i.owner === charId && i.equipped && i.itemType === 2);
     const names = {}, out = [];
     const remember = (h) => { const d = data.item(h); if (d) names[h] = [d[I.name], d[I.icon]]; };
     for (const it of items) {
@@ -71,7 +72,7 @@ export function createCore({ store, cache, auth = '', visible = () => true, bung
       for (const [idx, h] of it.plugs.entries()) {
         if (!h) continue;
         const c = (await plugInfo(h)).cats; // Standard-Ornament hat auch die Shader-Kategorie, daher Ornament zuerst
-        const kind = c.includes(CAT.ornament) ? 'ornament' : c.includes(CAT.shader) ? 'shader' : null;
+        const kind = isOrnament(h, c) ? 'ornament' : c.includes(CAT.shader) ? 'shader' : null;
         if (!kind) continue;
         const options = [...new Set(unlocked(sets[idx]))];
         [h, ...options].forEach(remember);
@@ -218,7 +219,7 @@ export function createCore({ store, cache, auth = '', visible = () => true, bung
       const p = await plugInfo(h);
       if (p.empty) continue;
       if (it.itemType === 2 && p.cats.includes(CAT.armorMod)) mods.push(h);
-      else if (p.cats.includes(CAT.shader) || p.cats.includes(CAT.ornament)) (modsByBucket[it.bucket] ??= []).push(h);
+      else if (p.cats.includes(CAT.shader) || isOrnament(h, p.cats)) (modsByBucket[it.bucket] ??= []).push(h);
     }
     const equipped = eq.map((i) => ({ id: i.id, hash: i.hash,
       ...(i.itemType === 16 && { socketOverrides: Object.fromEntries(i.plugs.map((h, idx) => [idx, h]).filter(([, h]) => h)) }) }));
