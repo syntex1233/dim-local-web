@@ -1,5 +1,5 @@
 // Service Worker: hält die App-Dateien für den Offline-Start bereit; immer zuerst aus dem Netz (Updates sofort)
-const CACHE = 'dimweb-v5';
+const CACHE = 'dimweb-v6';
 const SHELL = ['./', 'index.html', 'app.mjs', 'config.mjs', 'core.mjs', 'data.mjs', 'inventory.mjs', 'bungie.mjs', 'extra.mjs', 'cloud.mjs', 'manifest.webmanifest', 'icon-180.png', 'icon-512.png'];
 
 // Neue Version sofort aktiv; alte Caches weg
