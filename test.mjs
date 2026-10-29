@@ -124,7 +124,7 @@ const calls = [];
 const PLUGS = {
   4: { displayProperties: { name: 'Default Shader' }, plug: { plugCategoryHash: 33 }, itemCategoryHashes: [41, 52] },
   100: { sockets: { socketEntries: [{}, {}, { reusablePlugSetHash: 5000 }] } }, // Testwaffe: Sockel 2 = Shader-Set
-  200: { sockets: { socketEntries: [{}, { reusablePlugSetHash: 5000 }, {}] } }, // Helm: Sockel 1 = Shader-Set
+  200: { sockets: { socketEntries: [{ singleInitialItemHash: 700 }, { reusablePlugSetHash: 5000 }, {}] } }, // Helm: Sockel 0 = Mod (leer: 700), 1 = Shader-Set
   700: { displayProperties: { name: 'Empty Mod Socket' }, plug: { plugCategoryHash: 22 }, itemCategoryHashes: [59, 4104513227] },
   710: { displayProperties: { name: 'Hands-On' }, plug: { plugCategoryHash: 22 }, itemCategoryHashes: [59, 4104513227] },
   701: { displayProperties: { name: 'Default Shader' }, plug: { plugCategoryHash: 33 }, itemCategoryHashes: [41] },
@@ -233,6 +233,7 @@ try {
 
   const saved = await json(await post('/api/myloadout/save', { charId: 'c1', name: 'Jetzt' }));
   assert.deepEqual(saved.equipped, [{ id: 'A', hash: 100 }, { id: 'S', hash: 600, socketOverrides: { 0: 601, 1: 602 } }]);
+  assert.deepEqual(saved.parameters.artifactUnlocks?.unlockedItemHashes, [802, 801], 'Artefakt: eingesetzter Perk (leerer Platz nicht) und aktive Stufe');
   assert.equal((await json(await fetch(srv.url + 'api/state'))).myLoadouts.length, 3);
 
   // Transmog (nur Rüstung): Helm anlegen; Shader-Sockel mit freigeschalteten Optionen, Rüstungs-Ornament, anwenden
@@ -263,6 +264,17 @@ try {
   const f2 = await json(await post('/api/fashion/apply', { id: 'f2', charId: 'c1' }));
   assert.equal(f2.ok, 0); assert.match(f2.errors[0], /nicht verfügbar/);
   assert.deepEqual((await json(await fetch(srv.url + 'api/state'))).fashion[0].look.map((x) => x.name), ['Gold']);
+
+  // DIM-Optionen: andere Waffen in den Tresor, andere Mods entfernen (Helm trägt Hands-On, Loadout will keine Mods)
+  profile.itemComponents.sockets.data.H.sockets[0].plugHash = 710;
+  await json(await post('/api/sync', {}));
+  await json(await post('/api/db', { key: 'loadouts', value: [{ id: 'cl', name: 'Leer', classType: 0, equipped: [{ id: 'H', hash: 200 }], unequipped: [], parameters: { mods: [] } }] }));
+  await json(await post('/api/myloadout/options', { id: 'cl', clearWeapons: true, clearMods: true }));
+  calls.length = 0;
+  await json(await post('/api/myloadout/apply', { id: 'cl', charId: 'c1' }));
+  assert.deepEqual(calls.filter((c) => c[0] === 'transfer').map((c) => c[1]), ['B'], 'nicht angelegte Waffe in den Tresor');
+  assert.deepEqual(calls.filter((c) => c[0] === 'insertPlug'), [['insertPlug', 'H', 'c1', 0, 700]], 'Mod durch leeren Sockel ersetzt');
+  profile.itemComponents.sockets.data.H.sockets[0].plugHash = 700;
 
   // Tags: zerlegen markieren und per tag: finden
   assert.equal((await post('/api/tag', { id: 'A', tag: 'zerlegen' })).status, 200);

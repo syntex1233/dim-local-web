@@ -98,6 +98,7 @@ label{display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--mut)
 #pickBar{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);display:none;flex-wrap:wrap;align-items:center;gap:8px;z-index:9;max-width:calc(100% - 32px);background:var(--side);border:1px solid var(--acc);border-radius:12px;padding:10px 14px;box-shadow:0 10px 30px #000a}
 #pickBar.on{display:flex}#pickBar select{width:auto}.it.pick{outline:3px solid var(--acc);outline-offset:1px}.it.pick::after{content:'✓';position:absolute;top:2px;left:4px;color:var(--acc);font-weight:700;text-shadow:0 0 3px #000}
 .src{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%}.scb{display:inline-flex}.scb button:first-child{border-radius:8px 0 0 8px}.scb button+button{border-radius:0 8px 8px 0;border-left:0;padding:0 8px}
+.loart{display:flex;align-items:center;flex-wrap:wrap;gap:6px;margin-top:8px}.loart img{width:28px;height:28px;border-radius:4px;background:#0006}.loopt{display:flex;flex-wrap:wrap;gap:4px 16px;margin-top:8px}.loopt label{font-size:13px}
 .carry{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:10px}.carry .items{grid-template-columns:repeat(3,1fr);max-width:240px}
 .eqwrap{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:14px}
 .pv img{width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:8px;margin-top:12px;background:#000;display:block}.pv i{display:block;margin-top:8px;color:var(--mut);font-size:13px}
@@ -282,7 +283,7 @@ body{height:100dvh}
 <div class="card" style="display:grid;gap:8px">
 <form id="loImport" class="row"><input name="link" placeholder="DIM-Link einfügen, z.B. https://dim.gg/abc1234/Mein-Build" style="flex:1;min-width:280px" autocomplete="off" required><button class="pri">Importieren</button></form>
 <form id="loSave" class="row"><select name="charId" id="loChar" aria-label="Charakter"></select><input name="name" placeholder="Name für das Loadout" style="flex:1;min-width:200px" required><button>Aktuelle Ausrüstung speichern</button></form>
-<span class="mut small">Übernommen werden Waffen, Rüstung, Subklasse mit Fähigkeiten, Aspekten und Fragmenten, Ghost, Sparrow, Schiff, Emblem sowie Rüstungs-Mods, Shader und Ornamente. Artefakt-Perks kann Bungie nicht setzen. Bei geteilten Loadouts nimmt die App dein bestes Exemplar desselben Items.</span></div>
+<span class="mut small">Übernommen werden Waffen, Rüstung, Subklasse mit Fähigkeiten, Aspekten und Fragmenten, Ghost, Sparrow, Schiff, Emblem sowie Rüstungs-Mods, Shader und Ornamente. Artefakt-Perks werden mitgespeichert und angezeigt, setzen musst du sie im Spiel (Bungie erlaubt das nicht – auch DIM nicht). Bei geteilten Loadouts nimmt die App dein bestes Exemplar desselben Items.</span></div>
 <h2>Meine Loadouts</h2><div id="myLo"></div>
 <h2>Spiel-Loadouts</h2>
 <div id="loList"></div>
@@ -413,7 +414,7 @@ document.addEventListener('click',e=>{const b=e.target.closest('button,[data-ite
  if(d.tmm){tmMode=d.tmm;renderPick();}
  if(d.fsa)act('/api/fashion/apply',{id:d.fsa,charId:d.to},'Transmog-Set angewendet').then(loadTm);
  if(d.del){const [k,id]=d.del.split(':');if((k==='loadouts'||k==='fashion')&&!confirm('Wirklich löschen?'))return;
-  setDb(k,(k==='loadouts'?S.myLoadouts.map(({items,mods,...l})=>l):k==='fashion'?S.fashion.map(({look,...f})=>f):S[k]).filter(x=>x.id!==id));}});
+  setDb(k,(k==='loadouts'?S.myLoadouts.map(({items,mods,stats,artifact,artifactOld,...l})=>l):k==='fashion'?S.fashion.map(({look,...f})=>f):S[k]).filter(x=>x.id!==id));}});
 
 // ---- Inventar
 let owner='all',gf='',lastItems=[],itemTimer;
@@ -616,6 +617,7 @@ function saveLo(snap){if(snap&&!LE.isNew&&!confirm('Inhalt durch die aktuell ang
 
 // ---- Eigene Loadouts
 const CLS=['Titan','Jäger','Warlock'];
+document.addEventListener('change',e=>{const c=e.target.closest('[data-loopt]');if(c)api('/api/myloadout/options',{id:c.dataset.id,[c.dataset.loopt]:c.checked}).then(()=>toast('Gespeichert')).catch(e=>toast(esc(e.message),true));});
 $('#loImport').onsubmit=e=>{e.preventDefault();act('/api/myloadout/import',{link:e.target.link.value},'Loadout importiert').then(r=>r&&e.target.reset());};
 $('#loSave').onsubmit=e=>{e.preventDefault();act('/api/myloadout/save',Object.fromEntries(new FormData(e.target)),'Loadout gespeichert').then(r=>r&&e.target.reset());};
 function myLoHtml(s){return s.myLoadouts.map(l=>{const gear=l.items.filter(x=>x.gear),skip=l.items.length-gear.length,sub=l.equipped.some(x=>x.socketOverrides);
@@ -623,7 +625,7 @@ function myLoHtml(s){return s.myLoadouts.map(l=>{const gear=l.items.filter(x=>x.
  <div class="row">${s.chars.filter(c=>l.classType===3||l.classType===c.classType).map(c=>`<button class="sm pri" data-mlo="${esc(l.id)}" data-to="${c.id}">Auf ${esc(c.cls)} anlegen</button>`).join('')}
  <button class="sm" data-share="${esc(l.id)}">DIM-Link kopieren</button><button class="sm" data-del="loadouts:${esc(l.id)}" aria-label="Löschen">✕</button></div></div>
  <div class="items" style="margin-top:8px;grid-template-columns:repeat(auto-fill,52px)">${gear.map(x=>`<div class="it" style="cursor:default${x.owned?'':';opacity:.35'}" title="${esc(x.name)}${x.equip?'':' (nur mitnehmen)'}${x.owned?'':' – nicht im Inventar'}"><img src="${esc(img(x.icon))}" alt="${esc(x.name)}">${x.equip?'':'<div class="bd"><span class="bdg lock">+</span></div>'}</div>`).join('')}</div>
- ${l.notes?`<div class="mut small" style="margin-top:6px">${esc(l.notes)}</div>`:''}${l.mods.length?`<div class="mods" title="Mods, Shader und Ornamente">${l.mods.map(m=>`<img src="${esc(img(m.icon))}" alt="${esc(m.name)}" title="${esc(m.name)}">`).join('')}</div>`:''}
+ ${l.notes?`<div class="mut small" style="margin-top:6px">${esc(l.notes)}</div>`:''}${l.artifact?.length?`<div class="loart"><span class="mut small">Artefakt${l.artifactOld?` (Saison ${l.parameters.artifactUnlocks.seasonNumber})`:''}:</span>${l.artifact.map(a=>`<img src="${esc(img(a.icon))}" alt="${esc(a.name)}" title="${esc(a.name)}">`).join('')}<span class="mut small">${l.artifactOld?'andere Saison – Perks gibt es so nicht mehr':'im Spiel selbst wählen'}</span></div>`:''}<div class="loopt">${[['clearWeapons','Andere Waffen in den Tresor'],['clearArmor','Andere Rüstung in den Tresor'],['clearMods','Andere Mods entfernen']].map(([k,t])=>`<label class="opchk"><input type="checkbox" data-loopt="${k}" data-id="${esc(l.id)}" ${l.parameters?.[k]?'checked':''}>${t}</label>`).join('')}</div>${l.mods.length?`<div class="mods" title="Mods, Shader und Ornamente">${l.mods.map(m=>`<img src="${esc(img(m.icon))}" alt="${esc(m.name)}" title="${esc(m.name)}">`).join('')}</div>`:''}
  ${l.stats?.length?`<div class="lsts" title="Werte der Rüstung (Klammer: Unterschied zur angelegten)">${l.stats.map(s=>`<span title="${esc(s.name)}">${s.icon?`<img src="${esc(img(s.icon))}" alt="">`:esc(s.name)+' '}${s.value}${s.diff?`<small style="color:var(--${s.diff>0?'ok':'bad'})">(${s.diff>0?'+':''}${s.diff})</small>`:''}</span>`).join('')}</div>`:''}
  <div class="mut small" style="margin-top:6px">${[sub&&'mit Subklassen-Setup',l.mods.length&&l.mods.length+' Mods/Shader',skip&&skip+' Einträge, die nicht anlegbar sind'].filter(Boolean).join(' · ')}</div></div>`;}).join('')||'<span class="mut">Noch keine eigenen Loadouts.</span>';}
 

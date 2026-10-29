@@ -2,7 +2,7 @@
 // Die Oberfläche ruft handle(method, pfad, query, body) statt HTTP auf; gespeichert wird in localStorage/IndexedDB.
 import { createData, I } from './data.mjs';
 import { authorizeUrl, createBungie } from './bungie.mjs';
-import { buildInventory, filterItems, GEAR, VAULT } from './inventory.mjs';
+import { ARTIFACT_BUCKET, buildInventory, filterItems, GEAR, VAULT } from './inventory.mjs';
 import { createExtra } from './extra.mjs';
 import { createCloud } from './cloud.mjs';
 
@@ -51,12 +51,12 @@ export function createCore({ store, cache, auth = '', visible = () => true, bung
 
   // ---------- Transmog: Shader/Ornamente ----------
   // Welches Plug-Set ein Sockel nutzt, steht nur in der vollen Item-Definition (je Item-Hash einmal laden)
-  const socketSets = new Map();
-  const setsOf = (hash) => {
-    if (!socketSets.has(hash)) socketSets.set(hash, bungie.definition(hash).then((d) =>
-      (d.sockets?.socketEntries ?? []).map((e) => e.reusablePlugSetHash || e.randomizedPlugSetHash || 0)).catch((e) => { socketSets.delete(hash); throw e; }));
-    return socketSets.get(hash);
+  const socketDefs = new Map();
+  const socketEntries = (hash) => {
+    if (!socketDefs.has(hash)) socketDefs.set(hash, bungie.definition(hash).then((d) => d.sockets?.socketEntries ?? []).catch((e) => { socketDefs.delete(hash); throw e; }));
+    return socketDefs.get(hash);
   };
+  const setsOf = async (hash) => (await socketEntries(hash)).map((e) => e.reusablePlugSetHash || e.randomizedPlugSetHash || 0);
   // Ornament: eigene Kategorie oder ein Rüstungsteil als Plug (Ornamente aus echter Rüstung, z. B. „Per Audacia“-Hose)
   const isOrnament = (h, cats) => cats.includes(CAT.ornament) || data.item(h)?.[I.itemType] === 2;
   // Angelegte Rüstung eines Charakters mit Shader-/Ornament-Sockeln und den freigeschalteten Alternativen
@@ -124,6 +124,8 @@ export function createCore({ store, cache, auth = '', visible = () => true, bung
     try {
       const profile = live.profile = await bungie.profile();
       live.inv = buildInventory(profile, data);
+      const sh = profile.profile?.data?.currentSeasonHash;
+      if (sh && live.seasonHash !== sh) bungie.def('DestinySeasonDefinition', sh).then((d) => { live.seasonHash = sh; live.season = d?.seasonNumber; }).catch(() => {});
       live.synced = new Date().toISOString(); live.error = null;
       await extra.afterSync();
       cloud?.pull(); // Loadouts, Sets, Shortcuts, Markierungen mit der anderen App abgleichen
@@ -186,7 +188,7 @@ export function createCore({ store, cache, auth = '', visible = () => true, bung
       .filter((x) => x.hash);
     const p = l.parameters ?? {};
     const lo = { id: crypto.randomUUID(), name: l.name || 'Loadout', classType: l.classType ?? 3, notes: l.notes ?? '',
-      equipped: items(l.equipped), unequipped: items(l.unequipped), parameters: { mods: p.mods ?? [], modsByBucket: p.modsByBucket ?? {} }, ...extra };
+      equipped: items(l.equipped), unequipped: items(l.unequipped), parameters: { ...p, mods: p.mods ?? [], modsByBucket: p.modsByBucket ?? {} }, ...extra };
     db.loadouts.push(lo); save();
     return lo;
   }
@@ -223,7 +225,14 @@ export function createCore({ store, cache, auth = '', visible = () => true, bung
     }
     const equipped = eq.map((i) => ({ id: i.id, hash: i.hash,
       ...(i.itemType === 16 && { socketOverrides: Object.fromEntries(i.plugs.map((h, idx) => [idx, h]).filter(([, h]) => h)) }) }));
-    return addLoadout({ name, classType: ch.classType, equipped, parameters: { mods, modsByBucket } });
+    // Artefakt wie bei DIM: gewählte Perks nur merken und anzeigen – setzen lässt Bungie sie nicht
+    const P = live.profile ?? {}, tiers = P.characterProgressions?.data?.[charId]?.seasonalArtifact?.tiers ?? [];
+    const art = (P.characterEquipment?.data?.[charId]?.items ?? []).find((r) => r.bucketHash === ARTIFACT_BUCKET);
+    const plugged = (P.itemComponents?.sockets?.data?.[art?.itemInstanceId]?.sockets ?? []).map((s) => s.plugHash);
+    const unlocked = [...new Set([...plugged.filter((h) => data.item(h)?.[I.type]), // leerer Platz hat keinen Typnamen
+      ...tiers.flatMap((t) => t.items ?? []).filter((x) => x.isActive).map((x) => x.itemHash)])];
+    return addLoadout({ name, classType: ch.classType, equipped, parameters: { mods, modsByBucket,
+      ...(unlocked.length && { artifactUnlocks: { unlockedItemHashes: unlocked, seasonNumber: live.season ?? 0 } }) } });
   }
 
   // Subklassen-Setup und Mods auf die angelegten Items des Charakters bringen
@@ -252,9 +261,19 @@ export function createCore({ store, cache, auth = '', visible = () => true, bung
         s.used = true;
         try { await insert(s.it, s.idx, m); } catch (e) { errors.push(`${s.it.name} → ${nameOf(m)}: ${e.message}`); }
       }
+      return sockets;
     }
     const p = lo.parameters ?? {};
-    if (p.mods?.length) await fill(eq().filter((i) => i.itemType === 2), p.mods);
+    if (p.mods?.length || p.clearMods) {
+      const sockets = await fill(eq().filter((i) => i.itemType === 2), p.mods ?? []);
+      if (p.clearMods) for (const s of sockets) {
+        const info = await plugInfo(s.h);
+        if (s.used || info.empty || !info.cats.includes(CAT.armorMod)) continue;
+        const empty = (await socketEntries(s.it.hash).catch(() => []))[s.idx]?.singleInitialItemHash;
+        if (!empty || empty === s.h) continue;
+        try { await insert(s.it, s.idx, empty); } catch (e) { errors.push(`${s.it.name} → Mod entfernen: ${e.message}`); }
+      }
+    }
     for (const [b, ms] of Object.entries(p.modsByBucket ?? {})) await fill(eq().filter((i) => i.bucket === +b), ms);
   }
 
@@ -292,6 +311,9 @@ export function createCore({ store, cache, auth = '', visible = () => true, bung
         ok++;
       } catch (e) { errors.push(`${it.name}: ${e.message}`); }
     }
+    const clear = [lo.parameters?.clearWeapons && 3, lo.parameters?.clearArmor && 2].filter(Boolean);
+    for (const it of live.inv.items.filter((i) => i.owner === charId && !i.equipped && !i.postmaster && clear.includes(i.itemType) && !used.has(i)))
+      try { await move(it, VAULT); } catch (e) { errors.push(`${it.name} → Tresor: ${e.message}`); }
     await applyMods(lo, charId, errors);
     await sync();
     return { ok, errors };
@@ -332,6 +354,8 @@ export function createCore({ store, cache, auth = '', visible = () => true, bung
               fashion: db.fashion.map((f) => ({ ...f, look: Object.values(f.byBucket).flatMap((x) => [x.ornament, x.shader]).filter(Boolean)
                 .map((h) => ({ name: data.item(h)?.[I.name] ?? '?', icon: data.item(h)?.[I.icon] })) })),
               myLoadouts: db.loadouts.map((l) => ({ ...l, stats: extra.loadoutStats(l),
+                artifact: (l.parameters?.artifactUnlocks?.unlockedItemHashes ?? []).map((h) => ({ hash: h, name: data.item(h)?.[I.name] ?? '?', icon: data.item(h)?.[I.icon] })),
+                artifactOld: !!(l.parameters?.artifactUnlocks?.seasonNumber && live.season && l.parameters.artifactUnlocks.seasonNumber !== live.season),
                 mods: [...(l.parameters?.mods ?? []), ...Object.values(l.parameters?.modsByBucket ?? {}).flat()]
                   .map((h) => ({ hash: h, name: data.item(h)?.[I.name] ?? '?', icon: data.item(h)?.[I.icon] })),
                 items: l.equipped.concat(l.unequipped).map((x) => {
@@ -402,6 +426,11 @@ export function createCore({ store, cache, auth = '', visible = () => true, bung
         case '/api/loadout': return json(200, await busy('Lege Loadout an …', () => bungie.equipLoadout(b.charId, b.index).then(sync)));
         case '/api/myloadout/import': return json(200, await importDim(b.link));
         case '/api/myloadout/save': return json(200, await saveCurrent(b.charId, b.name));
+        case '/api/myloadout/options': { // DIM-Optionen: andere Waffen/Rüstung in den Tresor, andere Mods entfernen
+          const lo = db.loadouts.find((x) => x.id === b.id) ?? (() => { throw new Error('Loadout nicht gefunden'); })();
+          for (const k of ['clearWeapons', 'clearArmor', 'clearMods']) if (k in b) lo.parameters = { ...lo.parameters, [k]: !!b[k] };
+          save(); return json(200, lo);
+        }
         case '/api/transmog/apply': return json(200, await busy('Transmog …', async () => {
           // Shader auf mehrere Teile: gleiche Reihenfolge wie die Anfrage, Fehler je Teil sammeln
           const errors = [];
