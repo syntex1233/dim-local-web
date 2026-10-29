@@ -27,7 +27,7 @@ export function buildInventory(profile, data) {
     const id = raw.itemInstanceId;
     const it = {
       id, hash: raw.itemHash, owner, equipped, postmaster: inPost, amount: raw.quantity ?? 1,
-      name: def[I.name], en: data.en?.(raw.itemHash), icon: def[I.icon], type: def[I.type], tier: def[I.tier], bucket: def[I.bucket], itemType, cls: def[I.cls],
+      name: def[I.name], en: data.en?.(raw.itemHash), source: data.source?.(raw.itemHash), icon: def[I.icon], type: def[I.type], tier: def[I.tier], bucket: def[I.bucket], itemType, cls: def[I.cls],
       power: instances[id]?.primaryStat?.value ?? 0,
       locked: !!(raw.state & 1), crafted: !!(raw.state & 8), lockable: !!raw.lockable,
       plugs: sockets[id]?.sockets.map((s) => s.plugHash ?? 0) ?? [], // eingesetzte Plugs je Sockel (Mods, Subklassen-Setup)

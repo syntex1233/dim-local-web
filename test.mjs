@@ -57,7 +57,7 @@ assert.equal(wl.labels[1].split('\x1f')[2], 'mies|mit Strich');
 // ---- Spieldaten-Fixture: [name, icon, typeName, tierType, bucketHash, itemType, classType]
 const KIN = 1498876634;
 const gamedata = ({
-  updated: 'x', en: { 2: 'Frenzy' }, items: {
+  updated: 'x', en: { 2: 'Frenzy' }, sources: ['Eisenbanner'], src: { 100: 0 }, items: {
     100: ['Testwaffe', '/i.png', 'Handfeuerwaffe', 5, KIN, 3, 3],
     1: ['Explosivladung', '', 'Eigenschaft', 0, 0, 19, 3],
     3: ['Explosivladung', '', 'Verbessertes Attribut', 0, 0, 19, 3], // verbesserte Variante, anderer Hash
@@ -282,6 +282,9 @@ try {
   assert.ok((await json(await fetch(srv.url + 'api/items?q=raserei'))).some((i) => i.id === 'A'));
   assert.ok((await json(await fetch(srv.url + 'api/items?q=frenzy'))).some((i) => i.id === 'A'));
   assert.ok((await json(await fetch(srv.url + 'api/godroll/search?q=frenzy'))).length > 0);
+  // Herkunft: suchbar und am Item
+  assert.deepEqual((await json(await fetch(srv.url + 'api/godroll/search?q=eisenb'))).map((w) => [w.name, w.sources]), [['Testwaffe', ['Eisenbanner']]]);
+  assert.equal((await items()).find((i) => i.id === 'A').source, 'Eisenbanner');
 
   // Godroll-Analyse: B hat Raserei, aber nicht Explosivladung -> knapp verfehlt; A passt (verbesserte Variante zählt)
   const exA = await json(await fetch(srv.url + 'api/godroll/item?id=A'));

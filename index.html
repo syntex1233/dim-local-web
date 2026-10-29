@@ -97,6 +97,7 @@ label{display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--mut)
 @media(max-width:600px){.pvs{grid-template-columns:1fr 1fr}.pvs .stat{padding:10px 12px}.pvs .stat b{font-size:20px}.pvm{grid-template-columns:74px 1fr auto}.pvm>b:last-child{display:none}}
 #pickBar{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);display:none;flex-wrap:wrap;align-items:center;gap:8px;z-index:9;max-width:calc(100% - 32px);background:var(--side);border:1px solid var(--acc);border-radius:12px;padding:10px 14px;box-shadow:0 10px 30px #000a}
 #pickBar.on{display:flex}#pickBar select{width:auto}.it.pick{outline:3px solid var(--acc);outline-offset:1px}.it.pick::after{content:'✓';position:absolute;top:2px;left:4px;color:var(--acc);font-weight:700;text-shadow:0 0 3px #000}
+.src{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%}.scb{display:inline-flex}.scb button:first-child{border-radius:8px 0 0 8px}.scb button+button{border-radius:0 8px 8px 0;border-left:0;padding:0 8px}
 .carry{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:10px}.carry .items{grid-template-columns:repeat(3,1fr);max-width:240px}
 .eqwrap{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:14px}
 .pv img{width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:8px;margin-top:12px;background:#000;display:block}.pv i{display:block;margin-top:8px;color:var(--mut);font-size:13px}
@@ -218,8 +219,8 @@ body{height:100dvh}
 <nav>
 <div class="logo">DIM <span>Local</span></div>
 <a href="#home" data-s="Start"><span class="ic">◈</span><span class="tx">Übersicht</span></a><a href="#inv" data-s="Inventar"><span class="ic">▦</span><span class="tx">Inventar</span></a>
-<a href="#godroll" data-s="Godrolls"><span class="ic">★</span><span class="tx">Godroll-Finder</span></a><a href="#loadouts" data-s="Loadouts"><span class="ic">⚔</span><span class="tx">Loadouts</span></a><a href="#transmog" data-s="Transmog"><span class="ic">✦</span><span class="tx">Transmog</span></a><a href="#optimizer" data-s="Optimierer"><span class="ic">⚖</span><span class="tx">Optimierer</span></a><a href="#weekly" data-s="Woche"><span class="ic">☼</span><span class="tx">Woche</span></a><a href="#progress" data-s="Fortschritt"><span class="ic">▲</span><span class="tx">Fortschritt</span></a><a href="#pvp" data-s="PvP"><span class="ic">◎</span><span class="tx">PvP</span></a>
-<a href="#search" data-s="Suchen"><span class="ic">⌕</span><span class="tx">Such-Shortcuts</span></a><a href="#settings" data-s="Setup"><span class="ic">⚙</span><span class="tx">Einstellungen</span></a>
+<a href="#godroll" data-s="Suche"><span class="ic">★</span><span class="tx">Suche</span></a><a href="#loadouts" data-s="Loadouts"><span class="ic">⚔</span><span class="tx">Loadouts</span></a><a href="#transmog" data-s="Transmog"><span class="ic">✦</span><span class="tx">Transmog</span></a><a href="#optimizer" data-s="Optimierer"><span class="ic">⚖</span><span class="tx">Optimierer</span></a><a href="#weekly" data-s="Woche"><span class="ic">☼</span><span class="tx">Woche</span></a><a href="#progress" data-s="Fortschritt"><span class="ic">▲</span><span class="tx">Fortschritt</span></a><a href="#pvp" data-s="PvP"><span class="ic">◎</span><span class="tx">PvP</span></a>
+<a href="#settings" data-s="Setup"><span class="ic">⚙</span><span class="tx">Einstellungen</span></a>
 <button id="syncBtn" data-run='{"type":"sync"}' title="Inventar neu laden (F5)">⟳ Aktualisieren</button>
 <div id="status"></div>
 </nav>
@@ -259,9 +260,9 @@ body{height:100dvh}
 </section>
 
 <section data-tab="godroll">
-<h1>Godroll-Finder</h1>
-<p class="sub">Empfohlene Rolls aus der Wishlist (<span id="grStatus"></span>). Waffe suchen, um Perks, Empfehlungen und deine Exemplare zu sehen.</p>
-<div class="row"><input id="grQ" placeholder="Waffe oder Perk, auch Englisch – z.B. Kill Clip" size="34" autocomplete="off"><button data-upd>Daten aktualisieren</button></div>
+<h1>Suche</h1>
+<p class="sub">Waffen nach Name, Perk oder Herkunft suchen (auch Englisch) – mit empfohlenen Rolls aus der Wishlist (<span id="grStatus"></span>) und deinen Exemplaren.</p>
+<div class="row"><input id="grQ" placeholder="Waffe, Perk oder Herkunft – z. B. Kill Clip, Eisenbanner, Raid" size="34" autocomplete="off"><button data-upd>Daten aktualisieren</button></div>
 <div class="grid" id="grList" style="margin-top:12px"></div>
 <div id="grWeapon"></div>
 </section>
@@ -312,15 +313,6 @@ body{height:100dvh}
 
 <section data-tab="progress"><h1>Fortschritt</h1><p class="sub">Ränge, Quests, Bounties und Triumph-Punkte.</p><div class="tabs" id="prChars"></div><div id="prOut"><span class="mut">Lädt …</span></div></section>
 
-<section data-tab="search">
-<h1>Such-Shortcuts</h1><p class="sub">Gespeicherte Suchen. Mit Aktion werden alle Treffer direkt verschoben oder gesperrt.</p>
-<form id="scForm" class="card row">
-<label>Name<input name="label" required size="16"></label>
-<label>Suche<input name="query" required size="34" placeholder="is:trash -is:locked"></label>
-<label>Aktion<select name="action"><option value="show">Nur anzeigen</option><option value="vault">In den Tresor</option><option value="char">Zum aktuellen Charakter</option><option value="lock">Sperren</option><option value="unlock">Entsperren</option></select></label>
-<button class="pri" style="align-self:flex-end">Speichern</button></form>
-<table><thead><tr><th>Name</th><th>Suche</th><th>Aktion</th><th></th></tr></thead><tbody id="scList"></tbody></table>
-</section>
 
 <section data-tab="settings">
 <h1>Einstellungen</h1>
@@ -509,7 +501,7 @@ async function openItem(id){const all=await get('/api/items?limit=5000&q='),i=al
   <button class="sm" data-mv="${esc(id)}" data-to="${c.id}" ${i.owner===c.id&&!i.postmaster?'disabled':''}>Hierhin</button>
   ${i.itemType>=2&&i.itemType<=3?`<button class="sm pri" data-mv="${esc(id)}" data-to="${c.id}" data-eq="1" ${i.equipped&&i.owner===c.id?'disabled':''}>Anlegen</button>`:''}</span></div>`).join('');
  $('#drawer').innerHTML=`<div class="row" style="gap:12px"><img src="${esc(img(i.icon))}" width="64" height="64" alt="" style="border-radius:6px"><div style="flex:1"><h1 style="font-size:19px">${esc(i.name)}</h1>
-  <span class="mut">${esc(i.type)}${i.power&&i.itemType!==16?' · '+i.power:''} · ${esc(charName(i.owner))}${i.postmaster?' (Postmaster)':''}${i.equipped?' · angelegt':''}</span></div><button class="sm" data-close aria-label="Schließen">✕</button></div>
+  <span class="mut">${esc(i.type)}${i.power&&i.itemType!==16?' · '+i.power:''} · ${esc(charName(i.owner))}${i.postmaster?' (Postmaster)':''}${i.equipped?' · angelegt':''}</span>${i.source?`<div class="small" style="margin-top:3px"><span class="mut">Herkunft:</span> ${esc(i.source)}</div>`:''}</div><button class="sm" data-close aria-label="Schließen">✕</button></div>
   <div class="pv" id="pv" data-id="${esc(id)}"></div>
   ${i.trash?`<div class="card" style="margin-top:12px;border-color:var(--bad)"><b class="err">Trash-Roll laut Wishlist</b></div>`:''}
   ${i.stats?.length?`<h2>Werte</h2>${statsHtml(i.stats,i.itemType===3?100:45)}`:''}
@@ -528,7 +520,7 @@ async function openItem(id){const all=await get('/api/items?limit=5000&q='),i=al
 let grTimer,grCurrent=null;
 $('#grQ').oninput=e=>{clearTimeout(grTimer);grTimer=setTimeout(()=>grSearch(e.target.value),200);};
 async function grSearch(q){const r=await get('/api/godroll/search?q='+encodeURIComponent(q));$('#grWeapon').innerHTML='';
- $('#grList').innerHTML=r.map(w=>`<div class="tile click ${w.tier===6?'exo':''}" data-w="${esc(w.name)}"><img src="${esc(img(w.icon))}" alt=""><div class="t"><b>${esc(w.name)}</b><span class="mut small">${esc(w.type)} · ${w.rolls} Rolls</span></div></div>`).join('')
+ $('#grList').innerHTML=r.map(w=>`<div class="tile click ${w.tier===6?'exo':''}" data-w="${esc(w.name)}"><img src="${esc(img(w.icon))}" alt=""><div class="t"><b>${esc(w.name)}</b><span class="mut small">${esc(w.type)} · ${w.rolls} Rolls</span>${w.sources?.length?`<span class="mut small src" title="${esc(w.sources.join(' / '))}">${esc(w.sources.join(' / '))}</span>`:''}</div></div>`).join('')
   ||(q?'<span class="mut">Keine Waffe mit Wishlist-Einträgen gefunden.</span>':'');}
 $('#grList').onclick=e=>{const t=e.target.closest('[data-w]');t&&grOpen(t.dataset.w);};
 const kind=r=>(r.title+' '+(r.note.match(/tags:\S+/)?.[0]??'')).toLowerCase();
@@ -538,7 +530,7 @@ async function grOpen(name){const w=await get('/api/godroll/weapon?name='+encode
  grCurrent=w;$('#grList').innerHTML='';const max=w.perks[0]?.count||1,filt=$('#grWeapon').dataset.f||'alle';
  const rolls=w.rolls.filter(r=>filt==='alle'||kind(r).includes(filt));
  $('#grWeapon').innerHTML=`<div class="card" style="margin-top:12px"><div class="row" style="gap:14px"><img src="${esc(img(w.icon))}" width="64" height="64" alt="" style="border-radius:6px">
-  <div style="flex:1"><h1>${esc(w.name)}</h1><span class="mut">${esc(w.type)} · ${w.total} empfohlene Kombinationen · du besitzt ${w.owned.length}</span></div><button id="grBack">Zurück</button></div></div>
+  <div style="flex:1"><h1>${esc(w.name)}</h1><span class="mut">${esc(w.type)} · ${w.total} empfohlene Kombinationen · du besitzt ${w.owned.length}</span>${w.sources?.length?`<div class="small" style="margin-top:4px"><span class="mut">Herkunft:</span> ${w.sources.map(esc).join(' / ')}</div>`:''}</div><button id="grBack">Zurück</button></div></div>
   ${w.owned.length?`<div class="card"><h2 style="margin-top:0">Deine Exemplare</h2>${w.owned.map((i,n)=>`<div class="roll"><div class="row" style="justify-content:space-between"><span>${i.god.length?'<span class="tag">GODROLL</span>':i.trash?'<span class="tag pvp" style="background:#c43b35;color:#fff">TRASH</span>':''}<b>${i.power}</b> <span class="mut small">${esc(charName(i.owner))}${i.locked?' · gesperrt':''}</span></span><button class="sm" data-item="${esc(i.id)}">Details</button></div>${perkCols(i,new Set(exs[n]?.rolls?.flatMap(r=>r.have)??[]))}${godrollHtml(i,exs[n],true)}</div>`).join('')}</div>`:''}
   <div class="row" style="gap:16px;align-items:flex-start">
   <div class="card" style="flex:1;min-width:300px"><h2 style="margin-top:0">Beliebteste Perks</h2>${w.perks.map(p=>`<div class="pbar"><div class="n">${p.icon?`<img src="${esc(img(p.icon))}" alt="">`:''}${esc(p.name)}</div><div class="b"><i style="width:${p.count/max*100}%"></i></div><span class="mut small">${p.count}</span></div>`).join('')}</div>
@@ -636,7 +628,6 @@ function myLoHtml(s){return s.myLoadouts.map(l=>{const gear=l.items.filter(x=>x.
  <div class="mut small" style="margin-top:6px">${[sub&&'mit Subklassen-Setup',l.mods.length&&l.mods.length+' Mods/Shader',skip&&skip+' Einträge, die nicht anlegbar sind'].filter(Boolean).join(' · ')}</div></div>`;}).join('')||'<span class="mut">Noch keine eigenen Loadouts.</span>';}
 
 // ---- Shortcuts
-$('#scForm').onsubmit=e=>{e.preventDefault();setDb('shortcuts',[...S.shortcuts,{id:uid(),...Object.fromEntries(new FormData(e.target))}]);e.target.reset();};
 
 // ---- Einstellungen
 let formsLoaded=false;
@@ -697,8 +688,7 @@ function render(){const s=S;
   $('#fsList').innerHTML=fashionHtml(s);
   $('#myLo').innerHTML=myLoHtml(s);
   $('#loChar').innerHTML=s.chars.map(c=>`<option value="${c.id}">${esc(c.cls)}</option>`).join('');
-  $('#scList').innerHTML=s.shortcuts.map(x=>`<tr><td>${esc(x.label)}</td><td><code>${esc(x.query)}</code></td><td>${scLabel[x.action]}</td><td><button class="sm" data-sc="${esc(x.id)}">Ausführen</button> <button class="sm" data-del="shortcuts:${esc(x.id)}" aria-label="Löschen">✕</button></td></tr>`).join('')||'<tr><td colspan="4" class="mut">Noch keine Shortcuts.</td></tr>';
-  $('#homeShortcuts').innerHTML=s.shortcuts.map(x=>`<button data-sc="${esc(x.id)}">${esc(x.label)}</button>`).join('');
+  $('#homeShortcuts').innerHTML=s.shortcuts.map(x=>`<span class="scb"><button class="sm" data-sc="${esc(x.id)}" title="${esc(x.query)}">${esc(x.label)}</button><button class="sm" data-del="shortcuts:${esc(x.id)}" title="Shortcut löschen" aria-label="${esc(x.label)} löschen">✕</button></span>`).join('');
 }
  if(!formsLoaded){formsLoaded=true;for(const [k,v] of Object.entries(s.settings)){const el=$('#setForm [name='+k+']');if(el)el.value=v;}
   $('#bgForm').apiKey.value=s.bungie.apiKey;$('#bgForm').clientId.value=s.bungie.clientId;if(s.bungie.hasSecret)$('#bgForm').clientSecret.placeholder='gespeichert – nur zum Ändern ausfüllen';}}
