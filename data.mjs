@@ -36,10 +36,16 @@ export function parseWishlist(text, rolls = {}, trash = {}, labels = [], labelId
 // items: hash -> [name, icon, typeName, tierType, bucketHash, itemType, classType]
 export const I = { name: 0, icon: 1, type: 2, tier: 3, bucket: 4, itemType: 5, cls: 6 };
 
+// Im Speicher liegen die Rolls je Waffe als ein String "csv:label;csv:label" statt als ~275.000 Mini-Arrays:
+// spart ~75 MB, Entpacken aller Waffen dauert ~20 ms. Die Cache-Datei behält das Array-Format.
+const pack = (o) => { for (const h in o) if (Array.isArray(o[h])) o[h] = o[h].map(([c, l]) => c + ':' + l).join(';'); };
+const unpack = (s) => (s ? s.split(';').map((r) => { const i = r.lastIndexOf(':'); return [r.slice(0, i), +r.slice(i + 1)]; }) : []);
+
 export function createData(cache) {
   let data = null;
   const status = { state: 'leer', updated: null, weapons: 0, error: null };
   const loaded = (d) => {
+    pack(d.rolls); pack(d.trash);
     data = d;
     Object.assign(status, { state: 'bereit', updated: d.updated, weapons: Object.keys(d.rolls).length, error: null });
   };
@@ -131,9 +137,10 @@ export function createData(cache) {
     const perkMatch = (p) => { if (!perkHit.has(p)) perkHit.set(p, hit(p)); return perkHit.get(p); };
     for (const h of Object.keys(data.rolls)) {
       const [name, icon, type, tier] = data.items[h];
-      if (!hit(h) && !data.rolls[h].some(([csv]) => csv.split(',').some(perkMatch))) continue;
+      const rs = unpack(data.rolls[h]);
+      if (!hit(h) && !rs.some(([csv]) => csv.split(',').some(perkMatch))) continue;
       const e = byName.get(name) ?? { name, icon, type, tier, rolls: 0 };
-      e.rolls += data.rolls[h].length;
+      e.rolls += rs.length;
       byName.set(name, e);
     }
     return [...byName.values()].sort((a, b) => a.name.localeCompare(b.name)).slice(0, 60);
@@ -146,7 +153,7 @@ export function createData(cache) {
     const [, icon, type, tier] = data.items[hashes[0]];
     const counts = new Map(), blocks = new Map();
     let total = 0;
-    for (const h of hashes) for (const [csv, li] of data.rolls[h]) {
+    for (const h of hashes) for (const [csv, li] of unpack(data.rolls[h])) {
       total++;
       const ps = csv.split(',').filter(Boolean);
       for (const p of ps) counts.set(p, (counts.get(p) ?? 0) + 1);
@@ -171,12 +178,12 @@ export function createData(cache) {
     const ok = ([csv]) => csv.split(',').filter(Boolean).every((p) => perkNames.has(data.items[p]?.[I.name]));
     const god = new Set();
     let kinds = '';
-    for (const r of data.rolls[hash] ?? []) if (ok(r)) {
+    for (const r of unpack(data.rolls[hash])) if (ok(r)) {
       const [title, , note = ''] = data.labels[r[1]].split('\x1f');
       god.add(title || 'Wishlist');
       kinds += (title + ' ' + (note.match(/tags:\S+/)?.[0] ?? '')).toLowerCase(); // PvE/PvP steht im Titel oder als tags:
     }
-    return { god: [...god], trash: (data.trash[hash] ?? []).some(ok), pve: kinds.includes('pve'), pvp: kinds.includes('pvp') };
+    return { god: [...god], trash: unpack(data.trash[hash]).some(ok), pve: kinds.includes('pve'), pvp: kinds.includes('pvp') };
   }
 
   // Godroll-Analyse je Waffe: pro Empfehlung (Wishlist-Block) die beste Kombination – was passt, was fehlt.
@@ -184,7 +191,7 @@ export function createData(cache) {
   function explain(hash, perkNames) {
     if (!data) return [];
     const best = new Map();
-    for (const [csv, li] of data.rolls[hash] ?? []) {
+    for (const [csv, li] of unpack(data.rolls[hash])) {
       const ps = [...new Set(csv.split(',').filter(Boolean).map((p) => data.items[p]?.[I.name]).filter(Boolean))];
       const have = ps.filter((n) => perkNames.has(n)), missing = ps.filter((n) => !perkNames.has(n));
       const b = best.get(li);
