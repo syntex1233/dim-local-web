@@ -27,7 +27,7 @@ export function buildInventory(profile, data) {
     const id = raw.itemInstanceId;
     const it = {
       id, hash: raw.itemHash, owner, equipped, postmaster: inPost, amount: raw.quantity ?? 1,
-      name: def[I.name], icon: def[I.icon], type: def[I.type], tier: def[I.tier], bucket: def[I.bucket], itemType, cls: def[I.cls],
+      name: def[I.name], en: data.en?.(raw.itemHash), icon: def[I.icon], type: def[I.type], tier: def[I.tier], bucket: def[I.bucket], itemType, cls: def[I.cls],
       power: instances[id]?.primaryStat?.value ?? 0,
       locked: !!(raw.state & 1), crafted: !!(raw.state & 8), lockable: !!raw.lockable,
       plugs: sockets[id]?.sockets.map((s) => s.plugHash ?? 0) ?? [], // eingesetzte Plugs je Sockel (Mods, Subklassen-Setup)
@@ -43,7 +43,7 @@ export function buildInventory(profile, data) {
         if (!col.some((d) => perkTypes.has(d[I.type]))) return;
         it.perks.push(opts.filter((h) => data.item(h)).map((h) => {
           const d = data.item(h); names.add(d[I.name]);
-          return { hash: h, name: d[I.name], icon: d[I.icon], active: h === s.plugHash };
+          return { hash: h, name: d[I.name], en: data.en?.(h), icon: d[I.icon], active: h === s.plugHash };
         }));
       });
       Object.assign(it, data.match(String(raw.itemHash), names));
@@ -137,18 +137,21 @@ const IS = {
   vault: (i) => i.owner === VAULT, equipped: (i) => i.equipped, postmaster: (i) => i.postmaster, crafted: (i) => i.crafted,
 };
 
+const perkHit = (i, t) => [...i.perks.flat(), ...(i.mods ?? [])].some((p) => p.name.toLowerCase().includes(t) || !!p.en?.toLowerCase().includes(t));
+
 export function filterItems(items, query) {
   const tests = query.toLowerCase().split(/\s+/).filter(Boolean).map((tok) => {
     const neg = tok.startsWith('-'), t = neg ? tok.slice(1) : tok;
     let f;
     if (t.startsWith('is:')) f = IS[t.slice(3)] ?? (() => false);
-    else if (t.startsWith('perk:')) f = (i) => i.perks.flat().some((p) => p.name.toLowerCase().includes(t.slice(5)));
+    else if (t.startsWith('perk:')) f = (i) => perkHit(i, t.slice(5));
     else if (t.startsWith('class:')) f = (i) => (CLASSES[i.cls] ?? '').toLowerCase().startsWith(t.slice(6));
     else if (t.startsWith('tag:')) f = (i) => i.tag === t.slice(4);
     else if (t.startsWith('owner:')) f = (i) => i.owner === t.slice(6);
     else if (t.startsWith('slot:')) f = (i) => i.bucket === SLOT[t.slice(5)];
     else if (t.startsWith('type:')) f = (i) => i.type.toLowerCase() === t.slice(5).replace(/_/g, ' ');
-    else f = (i) => i.name.toLowerCase().includes(t) || i.type.toLowerCase().includes(t) || !!i.note?.toLowerCase().includes(t);
+    // freier Text: Name (deutsch/englisch), Typ, Notiz, Perks und Mods
+    else f = (i) => i.name.toLowerCase().includes(t) || !!i.en?.toLowerCase().includes(t) || i.type.toLowerCase().includes(t) || !!i.note?.toLowerCase().includes(t) || perkHit(i, t);
     return neg ? (i) => !f(i) : f;
   });
   return items.filter((i) => tests.every((f) => f(i)));

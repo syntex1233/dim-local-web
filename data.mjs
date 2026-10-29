@@ -62,6 +62,12 @@ export function createData(cache) {
         if (n) items[h] = [n, d.displayProperties.icon ?? '', d.itemTypeDisplayName ?? '', d.inventory?.tierType ?? 0,
           d.inventory?.bucketTypeHash ?? 0, d.itemType ?? 0, d.classType ?? 3];
       }
+      // Englische Namen für die Suche (Waffen, Rüstung, Perks/Mods), nur wo sie vom Namen in der App-Sprache abweichen
+      const en = {};
+      if (p !== paths.en) {
+        const ed = await get(BUNGIE + paths.en.DestinyInventoryItemLiteDefinition);
+        for (const [h, x] of Object.entries(items)) if ([2, 3, 19].includes(x[I.itemType])) { const n = ed[h]?.displayProperties?.name; if (n && n !== x[I.name]) en[h] = n; }
+      }
       for (const h of Object.keys(rolls)) if (!items[h]) delete rolls[h];
       // Welche Plug-Typen sind "Perks"? Alle Typen, unter denen Wishlist-Perks (inkl. gleichnamiger verbesserter Varianten) vorkommen.
       const perkNames = new Set();
@@ -75,7 +81,7 @@ export function createData(cache) {
       const named = async (key, f) => Object.fromEntries(Object.entries(await get(BUNGIE + p[key])).map(([h, d]) => [h, f(d)]));
       const buckets = await get(BUNGIE + p.DestinyInventoryBucketDefinition);
       const d = {
-        updated: new Date().toISOString(), version: manifest.version, lang, items, perkTypes, rolls, trash, labels, stacks,
+        updated: new Date().toISOString(), version: manifest.version, lang, items, en, perkTypes, rolls, trash, labels, stacks,
         limits: { vault: buckets[138197802]?.itemCount, postmaster: buckets[215593132]?.itemCount }, // Plätze laut aktuellem Manifest
         stats: await named('DestinyStatDefinition', (d) => [d.displayProperties?.name ?? '', d.displayProperties?.icon ?? '', d.index ?? 0]),
         // Quest-/Bounty-Ziele (Text) und Ränge (Name, Icon, Stufennamen) für die Fortschritts-Seite
@@ -97,7 +103,7 @@ export function createData(cache) {
   // Automatisch neu laden: neues Bungie-Manifest (Patch/Saison), Wishlist älter als 24 h, andere Sprache oder alter Cache
   async function check(urls, lang, apiKey) {
     try {
-      const fresh = data?.ranks && data.lang === lang && Date.now() - Date.parse(data.updated) < 24 * 3600_000;
+      const fresh = data?.ranks && data.en && data.lang === lang && Date.now() - Date.parse(data.updated) < 24 * 3600_000;
       if (fresh && (await get(`${BUNGIE}/Platform/Destiny2/Manifest/`, 'json', { 'x-api-key': apiKey })).Response.version === data.version) return false;
       await update(urls, lang, apiKey);
       return status.state === 'bereit' && !status.error;
@@ -119,10 +125,13 @@ export function createData(cache) {
   function search(q) {
     if (!data || !q.trim()) return [];
     q = q.toLowerCase();
-    const byName = new Map();
+    const byName = new Map(), perkHit = new Map();
+    // Treffer über Waffenname oder einen empfohlenen Perk – jeweils deutsch oder englisch
+    const hit = (h) => !!(data.items[h]?.[I.name].toLowerCase().includes(q) || data.en?.[h]?.toLowerCase().includes(q));
+    const perkMatch = (p) => { if (!perkHit.has(p)) perkHit.set(p, hit(p)); return perkHit.get(p); };
     for (const h of Object.keys(data.rolls)) {
       const [name, icon, type, tier] = data.items[h];
-      if (!name.toLowerCase().includes(q)) continue;
+      if (!hit(h) && !data.rolls[h].some(([csv]) => csv.split(',').some(perkMatch))) continue;
       const e = byName.get(name) ?? { name, icon, type, tier, rolls: 0 };
       e.rolls += data.rolls[h].length;
       byName.set(name, e);
@@ -185,5 +194,5 @@ export function createData(cache) {
       .map(({ li, have, missing }) => { const [title, cols, note] = data.labels[li].split('\x1f'); return { title, cols, note, have, missing }; });
   }
 
-  return { ready, status, update, check, search, weapon, match, explain, item, get raw() { return data; } };
+  return { ready, status, update, check, search, weapon, match, explain, item, en: (h) => data?.en?.[h], get raw() { return data; } };
 }

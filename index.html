@@ -233,7 +233,7 @@ body{height:100dvh}
 <section data-tab="inv">
 <div class="toolbar">
 <div class="row" style="justify-content:space-between"><h1 style="margin:0">Inventar</h1><span class="mut" id="hitCount"></span></div>
-<div class="row" style="margin-top:10px"><input id="q" placeholder="Suche: Name, perk:explosiv, is:godroll, -is:locked …" style="flex:1;min-width:260px" autocomplete="off"><button id="saveSc">Als Shortcut speichern</button></div>
+<div class="row" style="margin-top:10px"><input id="q" placeholder="Suche: Name oder Perk, auch Englisch – is:godroll, -is:locked …" style="flex:1;min-width:260px" autocomplete="off"><button id="saveSc">Als Shortcut speichern</button></div>
 <div class="filters">
 <select id="fCat" aria-label="Kategorie"><option value="">Alle Kategorien</option><option value="is:weapon">Waffen</option><option value="is:armor">Rüstung</option><option value="-is:weapon -is:armor">Ghosts, Sparrows &amp; Co</option></select>
 <select id="fSlot" aria-label="Slot"><option value="">Alle Slots</option><optgroup label="Waffen"><option value="slot:kinetik">Kinetik</option><option value="slot:energie">Energie</option><option value="slot:power">Power</option></optgroup><optgroup label="Rüstung"><option value="slot:helm">Helm</option><option value="slot:arme">Arme</option><option value="slot:brust">Brust</option><option value="slot:beine">Beine</option><option value="slot:klasse">Klassengegenstand</option></optgroup><optgroup label="Sonstiges"><option value="slot:ghost">Ghost</option><option value="slot:sparrow">Sparrow</option><option value="slot:schiff">Schiff</option><option value="slot:emblem">Emblem</option></optgroup></select>
@@ -252,7 +252,7 @@ body{height:100dvh}
 <section data-tab="godroll">
 <h1>Godroll-Finder</h1>
 <p class="sub">Empfohlene Rolls aus der Wishlist (<span id="grStatus"></span>). Waffe suchen, um Perks, Empfehlungen und deine Exemplare zu sehen.</p>
-<div class="row"><input id="grQ" placeholder="Waffenname, z.B. Schicksalsbringer" size="34" autocomplete="off"><button data-upd>Daten aktualisieren</button></div>
+<div class="row"><input id="grQ" placeholder="Waffe oder Perk, auch Englisch – z.B. Kill Clip" size="34" autocomplete="off"><button data-upd>Daten aktualisieren</button></div>
 <div class="grid" id="grList" style="margin-top:12px"></div>
 <div id="grWeapon"></div>
 </section>

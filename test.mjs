@@ -57,7 +57,7 @@ assert.equal(wl.labels[1].split('\x1f')[2], 'mies|mit Strich');
 // ---- Spieldaten-Fixture: [name, icon, typeName, tierType, bucketHash, itemType, classType]
 const KIN = 1498876634;
 const gamedata = ({
-  updated: 'x', items: {
+  updated: 'x', en: { 2: 'Frenzy' }, items: {
     100: ['Testwaffe', '/i.png', 'Handfeuerwaffe', 5, KIN, 3, 3],
     1: ['Explosivladung', '', 'Eigenschaft', 0, 0, 19, 3],
     3: ['Explosivladung', '', 'Verbessertes Attribut', 0, 0, 19, 3], // verbesserte Variante, anderer Hash
@@ -261,6 +261,11 @@ try {
   assert.equal((await post('/api/tag', { id: 'A', tag: 'zerlegen' })).status, 200);
   assert.deepEqual((await json(await fetch(srv.url + 'api/items?q=tag:zerlegen'))).map((i) => i.id), ['A']);
   await post('/api/tag', { id: 'A' });
+
+  // Suche nach Perks, auch mit englischem Namen; Godroll-Finder findet Waffen über empfohlene Perks
+  assert.ok((await json(await fetch(srv.url + 'api/items?q=raserei'))).some((i) => i.id === 'A'));
+  assert.ok((await json(await fetch(srv.url + 'api/items?q=frenzy'))).some((i) => i.id === 'A'));
+  assert.ok((await json(await fetch(srv.url + 'api/godroll/search?q=frenzy'))).length > 0);
 
   // Godroll-Analyse: B hat Raserei, aber nicht Explosivladung -> knapp verfehlt; A passt (verbesserte Variante zählt)
   const exA = await json(await fetch(srv.url + 'api/godroll/item?id=A'));
