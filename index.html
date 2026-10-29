@@ -90,6 +90,11 @@ label{display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--mut)
  .oitems{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px;width:100%}.oit,.oit .it{width:auto;min-width:0}.oit .obt{padding:2px 4px;font-size:13px}.oit .row{flex-wrap:nowrap}
  .omod{font-size:11px;gap:2px}.omod img{width:16px;height:16px}.exogrid{grid-template-columns:repeat(auto-fill,42px)}.exob img{width:36px;height:36px}}
 .clamp{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}.clamp.open{display:block}.more{margin-top:4px;padding:2px 8px}
+.pvt{width:100%;border-collapse:collapse;font-size:13px;font-variant-numeric:tabular-nums}.pvt th,.pvt td{padding:7px 8px;text-align:right;white-space:nowrap}.pvt th:first-child,.pvt td:first-child{text-align:left}.pvt th{color:var(--mut);font-weight:500}.pvt tr+tr td{border-top:1px solid var(--line)}
+.pvm{display:grid;grid-template-columns:96px 1fr auto 52px;gap:10px;align-items:center;padding:10px 12px;margin-top:6px;border-radius:8px;background:var(--card);border-left:4px solid var(--bad);cursor:pointer;font-variant-numeric:tabular-nums}.pvm.win{border-left-color:var(--ok)}.pvm>b:first-child{color:var(--bad)}.pvm.win>b:first-child{color:var(--ok)}.pvm>b:last-child{text-align:right}.pvm:hover{background:var(--card2)}
+.pvd{padding:6px 12px 10px;background:var(--side);border-radius:0 0 8px 8px}.pvd:empty{display:none}.pvteam{margin-top:8px}
+.pvpl{display:flex;gap:10px;align-items:center;padding:5px 4px;cursor:pointer;border-radius:6px;font-variant-numeric:tabular-nums}.pvpl:hover{background:var(--card2)}.pvpl img,.pvpl .noic{width:28px;height:28px;flex:none}.pvpl b{width:40px;text-align:right}
+@media(max-width:600px){.pvs{grid-template-columns:1fr 1fr}.pvs .stat{padding:10px 12px}.pvs .stat b{font-size:20px}.pvm{grid-template-columns:74px 1fr auto}.pvm>b:last-child{display:none}}
 .carry{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:10px}.carry .items{grid-template-columns:repeat(3,1fr);max-width:240px}
 .eqwrap{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:14px}
 .pv img{width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:8px;margin-top:12px;background:#000;display:block}.pv i{display:block;margin-top:8px;color:var(--mut);font-size:13px}
@@ -211,7 +216,7 @@ body{height:100dvh}
 <nav>
 <div class="logo">DIM <span>Local</span></div>
 <a href="#home" data-s="Start"><span class="ic">◈</span><span class="tx">Übersicht</span></a><a href="#inv" data-s="Inventar"><span class="ic">▦</span><span class="tx">Inventar</span></a>
-<a href="#godroll" data-s="Godrolls"><span class="ic">★</span><span class="tx">Godroll-Finder</span></a><a href="#loadouts" data-s="Loadouts"><span class="ic">⚔</span><span class="tx">Loadouts</span></a><a href="#transmog" data-s="Transmog"><span class="ic">✦</span><span class="tx">Transmog</span></a><a href="#optimizer" data-s="Optimierer"><span class="ic">⚖</span><span class="tx">Optimierer</span></a><a href="#weekly" data-s="Woche"><span class="ic">☼</span><span class="tx">Woche</span></a><a href="#progress" data-s="Fortschritt"><span class="ic">▲</span><span class="tx">Fortschritt</span></a>
+<a href="#godroll" data-s="Godrolls"><span class="ic">★</span><span class="tx">Godroll-Finder</span></a><a href="#loadouts" data-s="Loadouts"><span class="ic">⚔</span><span class="tx">Loadouts</span></a><a href="#transmog" data-s="Transmog"><span class="ic">✦</span><span class="tx">Transmog</span></a><a href="#optimizer" data-s="Optimierer"><span class="ic">⚖</span><span class="tx">Optimierer</span></a><a href="#weekly" data-s="Woche"><span class="ic">☼</span><span class="tx">Woche</span></a><a href="#progress" data-s="Fortschritt"><span class="ic">▲</span><span class="tx">Fortschritt</span></a><a href="#pvp" data-s="PvP"><span class="ic">◎</span><span class="tx">PvP</span></a>
 <a href="#search" data-s="Suchen"><span class="ic">⌕</span><span class="tx">Such-Shortcuts</span></a><a href="#settings" data-s="Setup"><span class="ic">⚙</span><span class="tx">Einstellungen</span></a>
 <button id="syncBtn" data-run='{"type":"sync"}' title="Inventar neu laden (F5)">⟳ Aktualisieren</button>
 <div id="status"></div>
@@ -300,6 +305,10 @@ body{height:100dvh}
 </section>
 
 <section data-tab="weekly"><h1>Diese Woche</h1><p class="sub" id="wkReset"></p><div id="wkOut"><span class="mut">Lädt …</span></div></section>
+
+<section data-tab="pvp"><h1>PvP</h1><p class="sub">Crucible-Statistiken – deine eigenen oder die anderer Spieler. Suche nach dem Bungie-Namen oder tippe in einem Match auf einen Spieler.</p>
+<div class="card" style="display:grid;gap:10px"><input id="pvpQ" placeholder="Spieler suchen, z. B. Name#1234" aria-label="Spieler suchen" autocomplete="off"><div id="pvpHits"></div><div class="tabs" id="pvpTracked" style="margin:0"></div></div>
+<div id="pvpOut"><span class="mut">Lädt …</span></div></section>
 
 <section data-tab="progress"><h1>Fortschritt</h1><p class="sub">Ränge, Quests, Bounties und Triumph-Punkte.</p><div class="tabs" id="prChars"></div><div id="prOut"><span class="mut">Lädt …</span></div></section>
 
@@ -764,7 +773,7 @@ const fitH=()=>{const port=innerHeight>innerWidth,sh=port?Math.max(screen.width,
  $('#vpInfo').textContent=`Fenster ${innerWidth}×${innerHeight} · Bildschirm ${screen.width}×${screen.height} · Home-Bildschirm-App: ${navigator.standalone?'ja':'nein'} · Body ${document.body.offsetHeight}px · Leiste unten bei ${Math.round(document.querySelector('nav').getBoundingClientRect().bottom)}px · Safe-Area oben ${cs.paddingTop}, unten ${cs.paddingBottom} · ${units} · sichtbar ${Math.round(visualViewport?.height??0)}`;pr.remove();};
 addEventListener('resize',fitH);addEventListener('orientationchange',()=>setTimeout(fitH,300));setTimeout(fitH,0);
 // Seiten: Optimierer, Woche, Fortschritt
-function showX(){const t=location.hash.slice(1);if(t==='optimizer')loadOp();if(t==='weekly')loadWk();if(t==='progress')loadPr();}
+function showX(){const t=location.hash.slice(1);if(t==='optimizer')loadOp();if(t==='weekly')loadWk();if(t==='progress')loadPr();if(t==='pvp')loadPvp();}
 addEventListener('hashchange',showX);setTimeout(showX,800);
 // Optimierer wie in DIM: links Werte (Priorität, an/aus, von–bis), Exotic, Angepinnt/Ausgeschlossen; rechts die besten Builds.
 // Einstellungen je Klasse im Browser gemerkt.
@@ -836,6 +845,35 @@ async function loadWk(){const n=new Date(),r=new Date(n);r.setUTCHours(17,0,0,0)
  if(w.error)return setH('#wkOut',`<span class="err">${esc(w.error)}</span>`);
  setH('#wkOut',`<h2>Xûr</h2>${w.xur?.length?`<div class="grid">${w.xur.map(x=>`<div class="tile ${x.tier===6?'exo':''}"><img src="${esc(img(x.icon))}" alt=""><div class="t"><b>${esc(x.name)}</b><span class="mut small">${esc(x.type)}</span></div></div>`).join('')}</div>`:`<span class="mut">Xûr ist gerade nicht da – er kommt freitags und bleibt bis zum Reset.${w.xurErr?` (Bungie: ${esc(w.xurErr)} – falls das dauerhaft kommt: in deiner Bungie-App den Scope „Read your Destiny vendor and advisor information“ anhaken und neu anmelden)`:''}</span>`}
  <h2>Wöchentliche Aktivitäten &amp; Meilensteine</h2><div class="wk">${w.milestones.map(m=>`<div class="card"><div class="row" style="gap:10px">${m.icon?`<img src="${esc(img(m.icon))}" width="40" height="40" alt="">`:''}<b>${esc(m.name)}</b></div>${m.desc?`<div class="mut small" style="margin-top:6px">${esc(m.desc)}</div>`:''}${m.acts.length?`<div class="small" style="margin-top:6px">${m.acts.map(esc).join(' · ')}</div>`:''}${m.end?`<div class="mut small" style="margin-top:6px">bis ${new Date(m.end).toLocaleString('de-DE',{weekday:'short',day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}</div>`:''}</div>`).join('')}</div>`);}
+// PvP: Crucible-Statistiken (eigene oder anderer Spieler), letzte Matches mit Details, Spielersuche, beobachtete Spieler
+let pvpWho=null,pvpCur=null,pvpT;
+const kd=n=>(+n||0).toFixed(2);
+const pvDate=d=>new Date(d).toLocaleString('de-DE',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
+async function loadPvp(who=pvpWho){pvpWho=who;setH('#pvpOut','<span class="mut">Lädt …</span>');
+ const p=await get('/api/pvp'+(who?`?mt=${who.mt}&mid=${encodeURIComponent(who.mid)}`:'')).catch(e=>({error:e.message}));
+ if(p.error)return setH('#pvpOut',`<span class="err">${esc(p.error)}</span>`);
+ pvpCur=p;const tr=p.tracked.some(t=>t.id===p.mid);
+ setH('#pvpTracked',`<button class="sm ${who?'':'act'}" data-pvme>Ich</button>`+p.tracked.map(t=>`<button class="sm ${who?.mid===t.id?'act':''}" data-pvp="${t.mt}|${esc(t.id)}">${esc(t.name)}</button>`).join(''));
+ const a=p.modes.find(m=>m.key==='allpvp'),st=(l,v)=>`<div class="stat"><span>${l}</span><b>${v}</b></div>`;
+ setH('#pvpOut',`<div class="row" style="gap:12px;margin:6px 0 14px;flex-wrap:nowrap">${p.chars[0]?.emblem?`<img src="${esc(img(p.chars[0].emblem))}" width="48" height="48" alt="">`:''}<div style="flex:1;min-width:0"><h2 style="margin:0">${esc(p.name)}</h2><div class="mut small">${p.chars.map(c=>`${esc(c.cls)} ${c.light}`).join(' · ')}</div></div>
+  ${who?`<button class="sm" data-pvtrack>${tr?'Nicht mehr beobachten':'Beobachten'}</button>`:''}</div>
+ ${a?`<div class="stats pvs">${st('K/D',kd(a.killsDeathsRatio))}${st('KDA',kd(a.killsDeathsAssists))}${st('Effizienz',kd(a.efficiency))}${st('Siegquote',Math.round(a.activitiesWon/a.activitiesEntered*100)+' %')}${st('Matches',fmt(a.activitiesEntered))}${st('Kills',fmt(a.kills))}${st('Präzisionskills',fmt(a.precisionKills))}${st('Längste Killserie',fmt(a.longestKillSpree))}${st('Meiste Kills in einem Match',fmt(a.bestSingleGameKills))}${st('Spielzeit',fmt(Math.round(a.secondsPlayed/3600))+' Std.')}</div>
+ <h2>Nach Modus</h2><div class="card" style="overflow-x:auto;padding:6px 8px"><table class="pvt"><thead><tr><th>Modus</th><th>Matches</th><th>Siege</th><th>K/D</th><th>KDA</th><th>Eff.</th><th>Kills</th><th>Tode</th></tr></thead><tbody>${p.modes.map(m=>`<tr><td>${esc(m.name)}</td><td>${fmt(m.activitiesEntered)}</td><td>${Math.round(m.activitiesWon/m.activitiesEntered*100)} %</td><td><b>${kd(m.killsDeathsRatio)}</b></td><td>${kd(m.killsDeathsAssists)}</td><td>${kd(m.efficiency)}</td><td>${fmt(m.kills)}</td><td>${fmt(m.deaths)}</td></tr>`).join('')}</tbody></table></div>`:'<span class="mut">Noch keine PvP-Matches.</span>'}
+ <h2>Letzte Matches</h2><p class="mut small" style="margin-top:-6px">Antippen für alle Spieler des Matches – Spieler antippen, um seine Werte zu sehen.</p>${p.matches.map(m=>`<div class="pvm ${m.win?'win':''}" data-pvm="${esc(m.id)}" role="button" tabindex="0"><b>${m.win?'Sieg':'Niederlage'}</b><div style="min-width:0"><div>${esc(m.mode)}</div><div class="mut small">${esc(m.map)} · ${esc(m.cls)} · ${pvDate(m.at)}</div></div><span title="Kills / Tode / Assists">${m.kills} / ${m.deaths} / ${m.assists}</span><b title="K/D">${kd(m.kd)}</b></div><div class="pvd" id="pvd${esc(m.id)}"></div>`).join('')||'<span class="mut">Keine.</span>'}`);}
+async function pvpMatch(id){const d=$('#pvd'+id);if(!d)return;if(d.innerHTML){d.innerHTML='';return;}d.innerHTML='<span class="mut small">Lädt …</span>';
+ const m=await get('/api/pvp/match?id='+id).catch(e=>({error:e.message}));
+ if(m.error){d.innerHTML=`<span class="err small">${esc(m.error)}</span>`;return;}
+ const row=x=>`<div class="pvpl" data-pvp="${x.mt}|${esc(x.mid)}" role="button" tabindex="0">${x.emblem?`<img src="${esc(img(x.emblem))}" alt="">`:'<i class="noic"></i>'}<span style="flex:1;min-width:0">${esc(x.name)} <span class="mut small">${esc(x.cls)}</span></span><span class="small">${x.kills} / ${x.deaths} / ${x.assists}</span><b>${kd(x.kd)}</b></div>`;
+ d.innerHTML=m.teams.length>1?m.teams.map(t=>`<div class="pvteam"><b style="color:var(--${t.win?'ok':'bad'})">${t.win?'Sieger':'Verlierer'} · ${fmt(t.score)} Punkte</b>${m.players.filter(x=>x.team===t.id).map(row).join('')}</div>`).join(''):m.players.map(row).join('');}
+$('#pvpQ').oninput=e=>{clearTimeout(pvpT);const q=e.target.value.trim();if(q.length<2)return setH('#pvpHits','');
+ pvpT=setTimeout(async()=>{const r=await get('/api/pvp/search?q='+encodeURIComponent(q)).catch(e=>({error:e.message}));
+  setH('#pvpHits',r.error?`<span class="err small">${esc(r.error)}</span>`:r.length?`<div class="row" style="gap:6px">${r.map(x=>`<button class="sm" data-pvp="${x.mt}|${esc(x.mid)}">${esc(x.name)}</button>`).join('')}</div>`:'<span class="mut small">Niemand gefunden.</span>');},400);};
+document.addEventListener('click',async e=>{const b=e.target.closest('[data-pvp],[data-pvme],[data-pvtrack],[data-pvm]');if(!b)return;const d=b.dataset;
+ if(d.pvm)return pvpMatch(d.pvm);
+ if(d.pvtrack!==undefined&&pvpCur){await api('/api/pvp/track',{mt:pvpCur.mt,mid:pvpCur.mid,name:pvpCur.name,remove:pvpCur.tracked.some(t=>t.id===pvpCur.mid)}).catch(e=>toast(esc(e.message),true));return loadPvp();}
+ $('#pvpQ').value='';setH('#pvpHits','');scrollTo({top:0});
+ if(d.pvme!==undefined)return loadPvp(null);const [mt,mid]=d.pvp.split('|');loadPvp({mt,mid});});
+document.addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.closest?.('[data-pvm],.pvpl'))e.target.click();});
 let prChar=null;
 async function loadPr(){prChar=S.chars.some(c=>c.id===prChar)?prChar:S.chars[0]?.id;
  setH('#prChars',S.chars.map(c=>`<button class="sm ${c.id===prChar?'act':''}" data-prc="${c.id}">${esc(c.cls)}</button>`).join(''));if(!prChar)return;

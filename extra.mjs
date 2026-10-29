@@ -1,12 +1,19 @@
 // Zusatzfunktionen – in Desktop- und Web-App identisch (dim-app/extra.mjs = dim-web/extra.mjs):
-// Tags & Notizen, Aufräumen, Rüstungs-Optimierer, Loadout-Werte, Farmen, Godroll-Hinweise, Wochenübersicht, Fortschritt
+// Tags & Notizen, Aufräumen, Rüstungs-Optimierer, Loadout-Werte, Farmen, Godroll-Hinweise, Wochenübersicht, Fortschritt, PvP-Statistiken
 import { I } from './data.mjs';
-import { filterItems, SLOT, VAULT } from './inventory.mjs';
+import { CLASSES, filterItems, SLOT, VAULT } from './inventory.mjs';
 
 const ARMOR = [SLOT.helm, SLOT.arme, SLOT.brust, SLOT.beine, SLOT.klasse];
 const FARM_BUCKETS = [SLOT.kinetik, SLOT.energie, SLOT.power, ...ARMOR, SLOT.ghost];
 const XUR = 2190858386; // Xûr-Händler
 export const TAGS = ['favorit', 'behalten', 'zerlegen', 'pve', 'pvp', 'raid'];
+// PvP-Modi der Bungie-Statistik (Schlüssel kleingeschrieben) in Anzeige-Reihenfolge
+const PVP_MODES = { allpvp: 'Alle PvP', pvpquickplay: 'Schnelles Spiel', pvpcompetitive: 'Kompetitiv', trialsofosiris: 'Trials of Osiris', ironbanner: 'Eisenbanner' };
+const PVP_STATS = ['activitiesEntered', 'activitiesWon', 'kills', 'deaths', 'assists', 'killsDeathsRatio', 'killsDeathsAssists', 'efficiency',
+  'precisionKills', 'longestKillSpree', 'bestSingleGameKills', 'secondsPlayed'];
+const CLASS_HASH = { 3655393761: 'Titan', 671679327: 'Jäger', 2271682572: 'Warlock' };
+const bv = (o, k) => o?.[k]?.basic?.value ?? 0;
+const bName = (u) => u?.bungieGlobalDisplayName ? `${u.bungieGlobalDisplayName}#${String(u.bungieGlobalDisplayNameCode ?? '').padStart(4, '0')}` : u?.displayName ?? '?';
 
 const val = (i, h) => i.stats?.find((s) => s.hash === h)?.value ?? 0;
 // Stat-Mods für den allgemeinen Sockel: Wert -> [Mod +10 (3 Energie), kleiner Mod +5 (1 Energie)]
@@ -73,6 +80,7 @@ export function optimize(items, classType, o = {}, keep = 10) {
 
 export function createExtra({ db, live, data, bungie, move, save, addLoadout, current }) {
   db.tags ??= {}; // itemId -> {tag, note}
+  db.pvp ??= [];  // beobachtete Spieler: {id: membershipId, mt, name}
   live.alerts = [];
   live.farm = null;
   live.farmLog = '';
@@ -172,12 +180,65 @@ export function createExtra({ db, live, data, bungie, move, save, addLoadout, cu
     return { quests, ranks, triumphs };
   }
 
+  // PvP: Statistiken sind bei Bungie öffentlich, daher auch für andere Spieler (mt/mid leer = eigenes Konto)
+  const pvpCache = new Map();
+  const actName = async (h) => (await defOf('DestinyActivityDefinition', h))?.displayProperties?.name ?? '';
+  async function pvp(mt, mid) {
+    if (!mid) [, , mt, , mid] = bungie.me().split('/');
+    const key = mt + '/' + mid, c = pvpCache.get(key);
+    if (c && Date.now() - c.at < 120_000) return { ...c.v, tracked: db.pvp };
+    const base = `/Destiny2/${mt}/Account/${mid}`;
+    const [prof, modes] = await Promise.all([bungie.get(`/Destiny2/${mt}/Profile/${mid}/?components=100,200`),
+      bungie.get(`${base}/Character/0/Stats/?modes=5,70,69,84,19&groups=1&periodType=2`)]);
+    const chars = Object.values(prof.characters?.data ?? {}).sort((a, b) => b.dateLastPlayed.localeCompare(a.dateLastPlayed));
+    const acts = (await Promise.all(chars.map((ch) => bungie.get(`${base}/Character/${ch.characterId}/Stats/Activities/?mode=5&count=25`)
+      .then((r) => (r.activities ?? []).map((a) => ({ ...a, cls: CLASSES[ch.classType] }))).catch(() => []))))
+      .flat().sort((a, b) => b.period.localeCompare(a.period)).slice(0, 25);
+    const matches = await Promise.all(acts.map(async (a) => ({ id: a.activityDetails.instanceId, at: a.period, cls: a.cls,
+      mode: await actName(a.activityDetails.directorActivityHash), map: await actName(a.activityDetails.referenceId),
+      win: bv(a.values, 'standing') === 0, kills: bv(a.values, 'kills'), deaths: bv(a.values, 'deaths'), assists: bv(a.values, 'assists'),
+      kd: bv(a.values, 'killsDeathsRatio'), eff: bv(a.values, 'efficiency') })));
+    const order = Object.keys(PVP_MODES);
+    const v = { name: bName(prof.profile?.data?.userInfo), mt: +mt, mid,
+      modes: Object.entries(modes ?? {}).map(([k, m]) => ({ key: k.toLowerCase(), name: PVP_MODES[k.toLowerCase()] ?? k, ...Object.fromEntries(PVP_STATS.map((s) => [s, bv(m.allTime, s)])) }))
+        .filter((m) => m.activitiesEntered).sort((a, b) => order.indexOf(a.key) - order.indexOf(b.key)),
+      chars: chars.map((ch) => ({ cls: CLASSES[ch.classType], light: ch.light, emblem: ch.emblemPath })), matches };
+    pvpCache.set(key, { at: Date.now(), v });
+    return { ...v, tracked: db.pvp };
+  }
+  // Match-Details (Post Game Carnage Report): beide Teams mit allen Spielern
+  async function pgcr(id) {
+    const r = await bungie.get(`https://stats.bungie.net/Platform/Destiny2/Stats/PostGameCarnageReport/${id}/`);
+    return { at: r.period, mode: await actName(r.activityDetails.directorActivityHash), map: await actName(r.activityDetails.referenceId),
+      teams: (r.teams ?? []).map((t) => ({ id: t.teamId, name: t.teamName, score: bv(t, 'score'), win: bv(t, 'standing') === 0 })),
+      players: (r.entries ?? []).map((e) => { const u = e.player?.destinyUserInfo ?? {};
+        return { name: bName(u), mt: u.membershipType, mid: u.membershipId, cls: CLASS_HASH[e.player?.classHash] ?? e.player?.characterClass ?? '', light: e.player?.lightLevel, emblem: u.iconPath,
+          team: bv(e.values, 'team'), kills: bv(e.values, 'kills'), deaths: bv(e.values, 'deaths'), assists: bv(e.values, 'assists'),
+          kd: bv(e.values, 'killsDeathsRatio'), eff: bv(e.values, 'efficiency') }; })
+        .sort((a, b) => b.kills - a.kills) };
+  }
+  // Spielersuche über den Bungie-Namen, „Name#1234“ grenzt auf den Code ein
+  async function pvpSearch(q) {
+    const [name, code = ''] = q.split('#');
+    if (!name.trim()) return [];
+    const r = await bungie.post('/User/Search/GlobalName/0/', { displayNamePrefix: name.trim() });
+    return (r.searchResults ?? []).map((x) => {
+      const ms = x.destinyMemberships ?? [], m = ms.find((m) => !m.crossSaveOverride || m.crossSaveOverride === m.membershipType) ?? ms[0];
+      return m && { name: bName(x), mt: m.membershipType, mid: m.membershipId };
+    }).filter((x) => x && x.name.split('#')[1]?.startsWith(code.trim())).slice(0, 20);
+  }
+
   // Routen: Rückgabe undefined = nicht zuständig
   async function route(method, path, q, b = {}) {
     if (method === 'GET') {
       if (path === '/api/extra/state') return { alerts: live.alerts, farm: live.farm, farmLog: live.farmLog, cleanup: cleanup(), tags: TAGS };
       if (path === '/api/weekly') return weekly();
       if (path === '/api/progress') return progress(q.get('charId') || undefined);
+      if (path === '/api/pvp') return pvp(q.get('mt'), q.get('mid')).catch((e) => {
+        throw q.get('mid') && /unable to find/i.test(e.message) ? new Error('Für dieses Konto gibt es keine Destiny-2-Daten – wahrscheinlich ein anderer Spieler mit ähnlichem Namen.') : e;
+      });
+      if (path === '/api/pvp/match') return pgcr(q.get('id'));
+      if (path === '/api/pvp/search') return pvpSearch(q.get('q') ?? '');
       if (path === '/api/optimize') {
         const ct = +q.get('classType'), t0 = Date.now();
         const res = optimize(live.inv?.items ?? [], ct, JSON.parse(q.get('opts') || '{}'));
@@ -200,6 +261,11 @@ export function createExtra({ db, live, data, bungie, move, save, addLoadout, cu
       if (b.tag || b.note) db.tags[b.id] = { tag: b.tag ?? '', note: b.note ?? '' }; else delete db.tags[b.id];
       if (it) { it.tag = b.tag ?? ''; it.note = b.note ?? ''; }
       save(); return {};
+    }
+    if (path === '/api/pvp/track') { // Spieler beobachten/entfernen (wird mitsynchronisiert)
+      db.pvp = db.pvp.filter((p) => p.id !== b.mid);
+      if (!b.remove) db.pvp.push({ id: b.mid, mt: +b.mt, name: b.name });
+      save(); return db.pvp;
     }
     if (path === '/api/farm') { live.farm = b.charId || null; live.farmLog = ''; if (live.farm && live.inv) await farm(); return {}; }
     if (path === '/api/optimize/save') {

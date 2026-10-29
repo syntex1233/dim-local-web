@@ -44,7 +44,7 @@ export function createBungie(cfg, auth, saveAuth) {
   }
 
   async function api(path, body, tries = 3) {
-    const r = await fetch(`${BUNGIE}/Platform${path}`, {
+    const r = await fetch(path.startsWith('https:') ? path : `${BUNGIE}/Platform${path}`, { // volle URL z. B. für stats.bungie.net
       method: body ? 'POST' : 'GET',
       headers: { 'x-api-key': cfg().apiKey, authorization: `Bearer ${await accessToken()}`, ...(body && { 'content-type': 'application/json' }) },
       body: body && JSON.stringify(body),
@@ -72,6 +72,7 @@ export function createBungie(cfg, auth, saveAuth) {
   return {
     login,
     get: (path) => api(path),
+    post: (path, body) => api(path, body),
     session: async () => (auth().access ? { token: await accessToken(), apiKey: cfg().apiKey } : null), // für den Cloud-Sync
     me: () => `/Destiny2/${mt()}/Profile/${auth().membershipId}`,
     def: (type, hash, lc = 'en') => api(`/Destiny2/Manifest/${type}/${hash}/?lc=${lc}`),

@@ -1,7 +1,7 @@
 // Cloud-Sync zwischen Desktop- und Web-App (identisch in dim-app und dim-web): eigene Loadouts, Transmog-Sets,
-// Such-Shortcuts und Markierungen liegen zusätzlich im Worker (Cloudflare KV), Schlüssel = Bungie-Konto.
+// Such-Shortcuts, Markierungen und beobachtete PvP-Spieler liegen zusätzlich im Worker (Cloudflare KV), Schlüssel = Bungie-Konto.
 // Pro Eintrag gewinnt die neuere Änderung; beim allerersten Abgleich werden Listen zusammengeführt statt überschrieben.
-export const SYNC_KEYS = ['loadouts', 'fashion', 'shortcuts', 'tags'];
+export const SYNC_KEYS = ['loadouts', 'fashion', 'shortcuts', 'tags', 'pvp'];
 
 export function createCloud({ url, db, save, session }) {
   db.syncAt ??= {}; // Eintrag -> Zeitpunkt der letzten lokalen Änderung
