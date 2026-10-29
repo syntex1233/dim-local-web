@@ -186,7 +186,7 @@ export function createExtra({ db, live, data, bungie, move, save, addLoadout, cu
         for (const i of live.inv?.items ?? []) if (ch && i.owner === ch.id && i.equipped && i.itemType === 2) for (const s of i.stats ?? []) cur[s.hash] = (cur[s.hash] ?? 0) + s.value;
         return { combos: res.combos, ms: Date.now() - t0, current: cur,
           results: res.map((r) => ({ miss: r.miss, items: r.items.map(short), stats: statList(r.tot),
-            mods: r.mods.map((m) => ({ ...m, plug: STAT_MODS[m.hash]?.[m.value === 10 ? 0 : 1] })) })) };
+            mods: r.mods.map((m) => { const plug = STAT_MODS[m.hash]?.[m.value === 10 ? 0 : 1], d = data.item(plug); return { ...m, plug, name: d?.[I.name], icon: d?.[I.icon] }; }) })) };
       }
       if (path === '/api/optimize/exotics') {
         const ct = +q.get('classType'), seenH = new Set();
